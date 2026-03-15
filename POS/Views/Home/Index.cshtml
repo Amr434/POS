@@ -1,0 +1,295 @@
+﻿@{
+    ViewData["Title"] = "الرئيسية";
+}
+
+<!-- Page Header -->
+<div class="page-header-section">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title-main">
+                <i class="bi bi-speedometer2 ms-3"></i>
+                لوحة التحكم
+            </h1>
+            <p class="page-subtitle">مرحباً بك في نظام إدارة نقاط البيع</p>
+        </div>
+        <div>
+            <span class="text-secondary">اليوم: @DateTime.Now.ToString("dd/MM/yyyy")</span>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards Row -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon bg-primary">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">12,450 ر.س</div>
+                <div class="stat-label">مبيعات اليوم</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">1,234</div>
+                <div class="stat-label">إجمالي المنتجات</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">12</div>
+                <div class="stat-label">تنبيهات المخزون</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="stat-card">
+            <div class="stat-icon bg-danger">
+                <i class="bi bi-receipt"></i>
+            </div>
+            <div class="stat-info">
+                <div class="stat-value">45</div>
+                <div class="stat-label">فواتير اليوم</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="content-card">
+            <h3 class="mb-3" style="color: var(--text-primary); font-size: 18px; font-weight: 600;">
+                <i class="bi bi-lightning-charge ms-2"></i>
+                إجراءات سريعة
+            </h3>
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <a href="#" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
+                            <i class="bi bi-cart-plus"></i>
+                        </div>
+                        <span>فاتورة جديدة</span>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <a asp-controller="Products" asp-action="Create" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+                            <i class="bi bi-plus-circle"></i>
+                        </div>
+                        <span>إضافة منتج</span>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <a href="#" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <span>التقارير</span>
+                    </a>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <a asp-controller="Categories" asp-action="Index" class="quick-action-card">
+                        <div class="quick-action-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                            <i class="bi bi-tags"></i>
+                        </div>
+                        <span>الفئات</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & Low Stock -->
+<div class="row g-3">
+    <!-- Recent Sales -->
+    <div class="col-lg-8">
+        <div class="content-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 style="color: var(--text-primary); font-size: 18px; font-weight: 600;">
+                    <i class="bi bi-clock-history ms-2"></i>
+                    آخر المبيعات
+                </h3>
+                <a href="#" class="text-decoration-none" style="color: var(--primary-color); font-size: 14px;">
+                    عرض الكل <i class="bi bi-arrow-left"></i>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table dashboard-table">
+                    <thead>
+                        <tr>
+                            <th>رقم الفاتورة</th>
+                            <th>التاريخ</th>
+                            <th>العميل</th>
+                            <th>المبلغ</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#INV-001</td>
+                            <td>@DateTime.Now.ToString("HH:mm")</td>
+                            <td>أحمد محمد</td>
+                            <td>450 ر.س</td>
+                            <td><span class="badge-new">مكتمل</span></td>
+                        </tr>
+                        <tr>
+                            <td>#INV-002</td>
+                            <td>@DateTime.Now.AddMinutes(-15).ToString("HH:mm")</td>
+                            <td>سارة أحمد</td>
+                            <td>320 ر.س</td>
+                            <td><span class="badge-new">مكتمل</span></td>
+                        </tr>
+                        <tr>
+                            <td>#INV-003</td>
+                            <td>@DateTime.Now.AddMinutes(-30).ToString("HH:mm")</td>
+                            <td>محمد علي</td>
+                            <td>680 ر.س</td>
+                            <td><span class="badge-reserved">معلق</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alert -->
+    <div class="col-lg-4">
+        <div class="content-card">
+            <h3 class="mb-3" style="color: var(--text-primary); font-size: 18px; font-weight: 600;">
+                <i class="bi bi-exclamation-triangle-fill ms-2" style="color: #f59e0b;"></i>
+                تنبيهات المخزون
+            </h3>
+            <div class="d-flex flex-column gap-3">
+                <div class="alert-item">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="alert-icon">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">منتج A</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">الكمية: 5 فقط</div>
+                        </div>
+                        <span class="badge-low">منخفض</span>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="alert-icon">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">منتج B</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">الكمية: 3 فقط</div>
+                        </div>
+                        <span class="badge-low">منخفض</span>
+                    </div>
+                </div>
+                <div class="alert-item">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="alert-icon">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">منتج C</div>
+                            <div style="color: var(--text-muted); font-size: 12px;">الكمية: 2 فقط</div>
+                        </div>
+                        <span class="badge-sold">نفذ</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .quick-action-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 24px;
+        background-color: var(--card-bg);
+        border: 1px solid var(--sidebar-border);
+        border-radius: 12px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .quick-action-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(16, 185, 129, 0.4);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .quick-action-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+
+    .quick-action-card span {
+        color: var(--text-primary);
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .dashboard-table {
+        margin: 0;
+    }
+
+    .dashboard-table thead th {
+        background-color: var(--body-bg);
+        color: var(--text-secondary);
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        padding: 12px;
+    }
+
+    .dashboard-table tbody td {
+        color: var(--text-primary);
+        font-size: 14px;
+        border-color: var(--sidebar-border);
+        padding: 12px;
+    }
+
+    .alert-item {
+        padding: 12px;
+        background-color: var(--body-bg);
+        border: 1px solid var(--sidebar-border);
+        border-radius: 8px;
+    }
+
+    .alert-icon {
+        width: 40px;
+        height: 40px;
+        background-color: rgba(245, 158, 11, 0.15);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #f59e0b;
+        font-size: 18px;
+    }
+</style>

@@ -1,0 +1,595 @@
+﻿@model CreateProductVm
+@{
+    ViewData["Title"] = "إضافة منتج جديد";
+}
+
+<style>
+    * {
+        font-family: 'Tajawal', sans-serif;
+    }
+
+    .create-product-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .create-product-header {
+        background-color: var(--card-bg);
+        border: 1px solid var(--sidebar-border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .header-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+
+    .header-title {
+        color: var(--text-primary);
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .header-subtitle {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin: 4px 0 0 0;
+    }
+
+    .btn-back-simple {
+        padding: 10px 20px;
+        background: transparent;
+        border: 1px solid var(--sidebar-border);
+        color: var(--text-secondary);
+        border-radius: 8px;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-back-simple:hover {
+            background-color: var(--sidebar-hover);
+            color: var(--text-primary);
+        }
+
+    .form-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--sidebar-border);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+    }
+
+    .form-section-title {
+        color: var(--text-primary);
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .form-section-title i {
+            color: var(--primary-color);
+        }
+
+    .form-group-simple {
+        margin-bottom: 20px;
+    }
+
+    .form-label-simple {
+        display: block;
+        color: var(--text-secondary);
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .required-mark {
+        color: #ef4444;
+        margin-left: 4px;
+    }
+
+    .form-control-simple,
+    .form-select-simple {
+        width: 100%;
+        padding: 12px 16px;
+        background-color: var(--body-bg);
+        border: 1px solid var(--sidebar-border);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+        .form-control-simple:focus,
+        .form-select-simple:focus {
+            outline: none;
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .form-control-simple::placeholder {
+            color: var(--text-muted);
+        }
+
+    .two-cols-simple {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .profit-preview {
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(20, 184, 166, 0.1));
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 16px;
+        display: none;
+    }
+
+        .profit-preview.show {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profit-preview i {
+            font-size: 24px;
+            color: #10b981;
+        }
+
+    .profit-details {
+        flex: 1;
+    }
+
+    .profit-amount {
+        color: #10b981;
+        font-size: 20px;
+        font-weight: 700;
+    }
+
+    .profit-label {
+        color: var(--text-secondary);
+        font-size: 13px;
+    }
+
+    .toggle-advanced {
+        width: 100%;
+        padding: 12px;
+        background: transparent;
+        border: 1px dashed var(--sidebar-border);
+        color: var(--primary-color);
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+
+        .toggle-advanced:hover {
+            background-color: rgba(16, 185, 129, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .toggle-advanced i {
+            transition: transform 0.3s;
+        }
+
+        .toggle-advanced.active i {
+            transform: rotate(45deg);
+        }
+
+    .advanced-section {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+
+        .advanced-section.show {
+            max-height: 2000px;
+        }
+
+    .advanced-content {
+        padding-top: 20px;
+    }
+
+    .text-danger-simple {
+        color: #ef4444;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .alert-simple {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .alert-success-simple {
+        background-color: rgba(16, 185, 129, 0.1);
+        border: 1px solid rgba(16, 185, 129, 0.3);
+        color: #10b981;
+    }
+
+    .alert-danger-simple {
+        background-color: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .btn-primary-simple {
+        flex: 1;
+        padding: 14px 24px;
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.3s;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+        .btn-primary-simple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+    .btn-secondary-simple {
+        padding: 14px 24px;
+        background: transparent;
+        border: 1px solid var(--sidebar-border);
+        color: var(--text-secondary);
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        text-decoration: none;
+    }
+
+        .btn-secondary-simple:hover {
+            background-color: var(--sidebar-hover);
+            color: var(--text-primary);
+        }
+
+    .form-hint {
+        color: var(--text-muted);
+        font-size: 12px;
+        margin-top: 4px;
+    }
+</style>
+
+<div class="create-product-container">
+    <!-- Header -->
+    <div class="create-product-header">
+        <div class="header-left">
+            <div class="header-icon">
+                <i class="bi bi-plus-circle"></i>
+            </div>
+            <div>
+                <h1 class="header-title">إضافة منتج جديد</h1>
+                <p class="header-subtitle">أضف منتج إلى المخزن بسرعة</p>
+            </div>
+        </div>
+        <a asp-action="Index" class="btn-back-simple">
+            <i class="bi bi-arrow-right"></i>
+            رجوع
+        </a>
+    </div>
+
+    <!-- Success/Error Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert-simple alert-success-simple">
+            <i class="bi bi-check-circle-fill"></i>
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert-simple alert-danger-simple">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            يرجى تصحيح الأخطاء في النموذج
+        </div>
+    }
+   
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        <!-- Essential Fields -->
+        <div class="form-card">
+            <h3 class="form-section-title">
+                <i class="bi bi-box-seam"></i>
+                المعلومات الأساسية
+            </h3>
+            <div class="two-cols-simple">
+                <div class="form-group-simple">
+                    <label class="form-label-simple">
+                        <span class="required-mark">*</span>
+                        اسم المنتج
+                    </label>
+                    <input asp-for="Name" class="form-control-simple" placeholder="مثال: Honda CB 500" autofocus>
+                    <span asp-validation-for="Name" class="text-danger-simple"></span>
+                </div>
+                <div class="form-group-simple">
+                    <label class="form-label-simple">الباركود</label>
+                    <input asp-for="Barcode" class="form-control-simple" placeholder="">
+                    <span asp-validation-for="Barcode" class="text-danger-simple"></span>
+                </div>
+            </div>
+
+            <!-- Category and Quantity -->
+            <div class="two-cols-simple">
+                <div class="form-group-simple">
+                    <label class="form-label-simple">
+                        <span class="required-mark">*</span>
+                        التصنيف
+                    </label>
+                    <select asp-for="CategoryId" asp-items="Model.Categories" class="form-select-simple">
+                        <option value="">اختر التصنيف</option>
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger-simple"></span>
+                </div>
+
+                <div class="form-group-simple">
+                    <label class="form-label-simple">
+                        <span class="required-mark">*</span>
+                        الكمية المتاحة
+                    </label>
+                    <input asp-for="Quantity" type="number" class="form-control-simple" placeholder="1">
+                    <span asp-validation-for="Quantity" class="text-danger-simple"></span>
+                </div>
+            </div>
+
+            <!-- Purchase and Sale Price -->
+            <div class="two-cols-simple">
+                <div class="form-group-simple">
+                    <label class="form-label-simple">
+                        <span class="required-mark">*</span>
+                        سعر الشراء (ج.م)
+                    </label>
+                    <input asp-for="PurchasePrice" type="number" step="0.01" class="form-control-simple" placeholder="0.00" id="purchasePrice">
+                    <span asp-validation-for="PurchasePrice" class="text-danger-simple"></span>
+                </div>
+
+                <div class="form-group-simple">
+                    <label class="form-label-simple">
+                        <span class="required-mark">*</span>
+                        سعر البيع (ج.م)
+                    </label>
+                    <input asp-for="SalePrice" type="number" step="0.01" class="form-control-simple" placeholder="0.00" id="salePrice">
+                    <span asp-validation-for="SalePrice" class="text-danger-simple"></span>
+                </div>
+            </div>
+
+            <!-- Profit Preview -->
+            <div class="profit-preview" id="profitPreview">
+                <i class="bi bi-graph-up-arrow"></i>
+                <div class="profit-details">
+                    <div class="profit-amount" id="profitAmount">0.00 ج.م</div>
+                    <div class="profit-label">هامش الربح (<span id="profitPercent">0</span>%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toggle Advanced Options -->
+        <button type="button" class="toggle-advanced" id="toggleAdvanced">
+            <i class="bi bi-plus-circle"></i>
+            <span>خيارات إضافية</span>
+        </button>
+
+        <!-- Advanced Section -->
+        <div class="advanced-section" id="advancedSection">
+            <div class="advanced-content">
+                <!-- Stock Settings -->
+                <div class="form-card">
+                    <h3 class="form-section-title">
+                        <i class="bi bi-archive"></i>
+                        إعدادات المخزون
+                    </h3>
+
+                    <div class="form-group-simple">
+                        <label class="form-label-simple">الحد الأدنى للمخزون</label>
+                        <input asp-for="MinStock" type="number" class="form-control-simple" placeholder="5">
+                        <p class="form-hint">سيتم تنبيهك عند وصول المخزون لهذا الحد</p>
+                        <span asp-validation-for="MinStock" class="text-danger-simple"></span>
+                    </div>
+                </div>
+
+                <!-- Status -->
+                <div class="form-card">
+                    <h3 class="form-section-title">
+                        <i class="bi bi-tag"></i>
+                        حالة المنتج
+                    </h3>
+
+                    <div class="form-group-simple">
+                        <select asp-for="Status" class="form-select-simple">
+                            <option value="1">جديد</option>
+                            <option value="2">محجوز</option>
+                            <option value="3">مُباع</option>
+                        </select>
+                        <span asp-validation-for="Status" class="text-danger-simple"></span>
+                    </div>
+                </div>
+
+                <!-- Motorcycle Fields -->
+                <div class="form-card">
+                    <h3 class="form-section-title">
+                        <i class="bi bi-bicycle"></i>
+                        بيانات الدراجة النارية (اختياري)
+                    </h3>
+
+                    <div class="form-group-simple">
+                        <label class="form-label-simple" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                            <input asp-for="IsMotorcycle" type="checkbox" class="form-check-input" id="isMotorcycle" style="width: 20px; height: 20px; cursor: pointer;">
+                            هذا المنتج دراجة نارية
+                        </label>
+                    </div>
+
+                    <div id="motorcycleFields" style="display: none;">
+                        <div class="two-cols-simple">
+                            <div class="form-group-simple">
+                                <label class="form-label-simple">رقم المحرك</label>
+                                <input asp-for="EngineNumber" class="form-control-simple" placeholder="اختياري">
+                                <span asp-validation-for="EngineNumber" class="text-danger-simple"></span>
+                            </div>
+
+                            <div class="form-group-simple">
+                                <label class="form-label-simple">رقم الشاسيه</label>
+                                <input asp-for="ChassisNumber" class="form-control-simple" placeholder="اختياري">
+                                <span asp-validation-for="ChassisNumber" class="text-danger-simple"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload -->
+                <div class="form-card">
+                    <h3 class="form-section-title">
+                        <i class="bi bi-image"></i>
+                        صورة المنتج
+                    </h3>
+
+                    <div class="form-group-simple">
+                        <input asp-for="Image" type="file" class="form-control-simple" accept="image/*">
+                    </div>
+                </div> <!-- end advanced-content -->
+            </div> <!-- end advanced-section -->
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary-simple">
+                <i class="bi bi-plus-circle"></i>
+                إضافة المنتج
+            </button>
+            <a asp-action="Index" class="btn-secondary-simple">
+                <i class="bi bi-arrow-right"></i>
+                إلغاء
+            </a>
+        </div>
+
+    </form>
+</div> <!-- end create-product-container -->
+<script>
+    // Toggle Advanced Section
+    document.getElementById('toggleAdvanced').addEventListener('click', function() {
+        const advancedSection = document.getElementById('advancedSection');
+        const icon = this.querySelector('i');
+        
+        advancedSection.classList.toggle('show');
+        this.classList.toggle('active');
+        
+        if (advancedSection.classList.contains('show')) {
+            this.querySelector('span').textContent = 'إخفاء الخيارات الإضافية';
+        } else {
+            this.querySelector('span').textContent = 'خيارات إضافية';
+        }
+    });
+
+    // Toggle Motorcycle Fields
+    document.getElementById('isMotorcycle').addEventListener('change', function() {
+        const fields = document.getElementById('motorcycleFields');
+        
+        if (this.checked) {
+            fields.style.display = 'block';
+        } else {
+            fields.style.display = 'none';
+        }
+    });
+
+    // Calculate Profit Margin
+    const purchaseInput = document.getElementById('purchasePrice');
+    const saleInput = document.getElementById('salePrice');
+    const displayPurchase = document.getElementById('displayPurchase');
+    const displaySale = document.getElementById('displaySale');
+    const displayProfit = document.getElementById('displayProfit');
+
+    function calculateProfit() {
+        const purchase = parseFloat(purchaseInput.value) || 0;
+        const sale = parseFloat(saleInput.value) || 0;
+        const profit = sale - purchase;
+        const percentage = purchase > 0 ? ((profit / purchase) * 100).toFixed(1) : 0;
+
+        displayPurchase.textContent = purchase.toFixed(2) + ' ج.م';
+        displaySale.textContent = sale.toFixed(2) + ' ج.م';
+
+        if (profit >= 0) {
+            displayProfit.textContent = profit.toFixed(2) + ' ج.م (' + percentage + '%)';
+            displayProfit.className = 'comparison-value profit';
+        } else {
+            displayProfit.textContent = profit.toFixed(2) + ' ج.م (' + percentage + '%)';
+            displayProfit.className = 'comparison-value loss';
+        }
+    }
+
+    purchaseInput.addEventListener('input', calculateProfit);
+    saleInput.addEventListener('input', calculateProfit);
+
+    // Stock Indicator
+    const quantityInput = document.getElementById('quantity');
+    const minStockInput = document.getElementById('minStock');
+    const stockIndicator = document.getElementById('stockIndicator');
+
+    function updateStockIndicator() {
+        const quantity = parseInt(quantityInput.value) || 0;
+        const minStock = parseInt(minStockInput.value) || 0;
+
+        if (quantity === 0) {
+            stockIndicator.className = 'stock-indicator danger mt-3';
+            stockIndicator.innerHTML = '<i class="bi bi-x-circle-fill"></i><span>نفذ المخزون!</span>';
+        } else if (quantity <= minStock) {
+            stockIndicator.className = 'stock-indicator warning mt-3';
+            stockIndicator.innerHTML = '<i class="bi bi-exclamation-circle-fill"></i><span>المخزون منخفض - يجب إعادة الطلب</span>';
+        } else {
+            stockIndicator.className = 'stock-indicator success mt-3';
+            stockIndicator.innerHTML = '<i class="bi bi-check-circle-fill"></i><span>المخزون في الحد الآمن</span>';
+        }
+    }
+
+    quantityInput.addEventListener('input', updateStockIndicator);
+    minStockInput.addEventListener('input', updateStockIndicator);
+
+</script>

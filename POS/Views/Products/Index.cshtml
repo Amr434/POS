@@ -1,0 +1,216 @@
+﻿@using Domain.Entities
+@model IEnumerable<Product>
+@{
+    ViewData["Title"] = "إدارة المنتجات";
+    var categories = ViewBag.Categories as IEnumerable<Category>;
+}
+
+<link rel="stylesheet" href="~/css/Products/index.css" asp-append-version="true" />
+
+<div class="products-page">
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" id="successAlert">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+                <div class="alert alert-error" id="errorAlert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <!-- Search and Filters -->
+    <div class="search-filter-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="bi bi-funnel"></i>
+                البحث عن منتج
+            </h2>
+        </div>
+
+        <div class="filters-row">
+            <div class="filter-group">
+                <label class="filter-label">اسم المنتج أو الباركود...</label>
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon" ></i>
+                    <input type="text" class="search-input" id="searchInput" placeholder="ابحث بالاسم أو الباركود...">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">التصنيف</label>
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">جميع التصنيفات</option>
+                    @if ( categories != null)
+                    {
+                        foreach (var category in categories)
+                        {
+                            <option value="@category.Id">@category.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            @* <div class="filter-group">
+                <label class="filter-label">حالة المخزون</label>
+                <select class="filter-select" id="stockFilter">
+                    <option value="">الكل</option>
+                    <option value="available">متوفر</option>
+                    <option value="low">مخزون منخفض</option>
+                    <option value="out">نفذ من المخزون</option>
+                </select>
+            </div> *@
+
+        @*    <div class="filter-group">
+                <label class="filter-label">&nbsp;</label>
+                <button class="btn-search" onclick="applyFilters()">
+                    <i class="bi bi-search"></i>
+                    بحث
+                </button>
+            </div> *@
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    <div class="products-table-card">
+        <div class="table-header">
+            <h3 class="table-title">قائمة المنتجات (@Model.Count() منتج)</h3>
+            <a asp-action="Create" class="btn-add">
+                <i class="bi bi-plus-circle"></i>
+                إضافة منتج جديد
+            </a>
+        </div>
+
+        @if (Model.Any())
+        {
+            <table class="products-table">
+                <thead>
+                    <tr>
+                        <th>الصورة</th>
+                        <th>المنتج</th>
+                        <th>الفئة</th>
+                        <th>سعر الشراء</th>
+                        <th>سعر البيع</th>
+                        <th>الكمية</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    @foreach (var product in Model)
+                    {
+                        var stockClass = product.Quantity == 0 ? "out" : (product.Quantity <= (product.Quantity) ? "low" : "available");
+                        var stockText = product.Quantity == 0 ? "نفذ من المخزون" : (product.Quantity <= (product.Quantity) ? "مخزون منخفض" : "متوفر");
+                        var statusClass = product.Status.ToString().ToLower() == "new" ? "new" : (product.Status.ToString().ToLower() == "reserved" ? "reserved" : "sold");
+                        var statusText = product.Status.ToString() == "New" ? "جديد" : (product.Status.ToString() == "Reserved" ? "محجوز" : "مُباع");
+
+                        <tr data-name="@product.Name"
+                            data-barcode="@product.Barcode"
+                            data-category="@product.CategoryId"
+                            data-stock="@stockClass">
+                            <td>
+                                <div class="product-image">
+                                    @if (!string.IsNullOrEmpty(product.ImagePath))
+                                    {
+                                        <img src="@product.ImagePath" alt="@product.Name" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-box-seam"></i>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-info">
+                                        <span class="product-name">@product.Name</span>
+                                        @if (!string.IsNullOrEmpty(product.Barcode))
+                                        {
+                                            <span class="product-sku">SKU: @product.Barcode</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="category-badge">@(product.Category?.Name ?? "غير مصنف")</span>
+                            </td>
+                            <td class="price-cell">@product.PurchasePrice.ToString("N0") ج.م</td>
+                            <td class="price-cell">@product.SalePrice.ToString("N0") ج.م</td>
+                            <td>
+                                <span class="stock-badge @stockClass">
+                                    <i class="bi bi-box"></i>
+                                    @product.Quantity
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-badge @statusClass">@statusText</span>
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <a asp-action="Details" asp-route-id="@product.Id" class="btn-action btn-view" title="عرض">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn-action btn-edit" title="تعديل">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button onclick="openDeleteModal(@product.Id, '@product.Name')" class="btn-action btn-delete" title="حذف">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h3>لا توجد منتجات</h3>
+                <p>قم بإضافة منتج جديد للبدء</p>
+                <a asp-action="Create" class="btn-add">
+                    <i class="bi bi-plus-circle"></i>
+                    إضافة منتج
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>تأكيد الحذف</h2>
+        </div>
+        <div class="modal-body">
+            <p>
+                هل أنت متأكد من حذف هذا المنتج؟<br>
+                <strong id="deleteProductName"></strong>
+            </p>
+            <input type="hidden" id="deleteProductId">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                <i class="bi bi-x-circle"></i>
+                إلغاء
+            </button>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                <i class="bi bi-trash"></i>
+                حذف
+            </button>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="~/js/Products/index.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,35 @@
+/* Tajawal Regular (400) - Body text */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('./Tajawal-Regular.ttf') format('truetype');
+}
+
+/* Tajawal Medium (500) - Labels, buttons */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./Tajawal-Medium.ttf') format('truetype');
+}
+
+/* Tajawal Bold (700) - Headings */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('./Tajawal-Bold.ttf') format('truetype');
+}
+
+/* Optional: Tajawal ExtraBold (800) */
+@font-face {
+    font-family: 'Tajawal';
+    font-style: normal;
+    font-weight: 800;
+    font-display: swap;
+    src: url('./Tajawal-ExtraBold.ttf') format('truetype');
+}
