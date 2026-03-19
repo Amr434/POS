@@ -18,6 +18,16 @@ namespace POS.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Index()
+        {
+            var purchases = await _context.Purchases
+                .Include(p => p.Supplier)
+                .OrderByDescending(p => p.PurchaseDate)
+                .ToListAsync();
+            return View(purchases);
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
             var model = new PurchaseFormVm();

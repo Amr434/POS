@@ -426,7 +426,7 @@
     animation: modalSlideIn 0.3s ease;
 }
 
-@@keyframes modalSlideIn {
+@keyframes modalSlideIn {
     from {
         opacity: 0;
         transform: translateY(-20px);
@@ -507,13 +507,13 @@
         background: #b91c1c;
     }
 
-@@media (max-width: 1200px) {
+@media (max-width: 1200px) {
     .filters-row {
         grid-template-columns: 1fr;
     }
 }
 
-@@media (max-width: 768px) {
+@media (max-width: 768px) {
     .products-table {
         font-size: 13px;
     }

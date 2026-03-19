@@ -80,12 +80,20 @@
                 </div>
             </div>
 
-            <!-- المشتريات -->
-            <div class="nav-item">
-                <a asp-controller="Purchases" asp-action="Create" class="nav-link" data-title="المشتريات" data-page="المشتريات">
-                    <i class="bi bi-bag"></i>
+            <!-- المبيعات -->
+            <div class="nav-item has-submenu">
+                <a href="#" class="nav-link" data-title="المبيعات" data-page="المبيعات">
+                    <i class="bi bi-cart3"></i>
                     <span>المشتريات</span>
                 </a>
+                <div class="submenu">
+                    <a asp-controller="Purchases" asp-action="Create" class="nav-link" data-title="المشتريات">
+                        <span>فاتورة جديدة</span>
+                    </a>
+                    <a asp-controller="Purchases" asp-action="Index" class="nav-link" data-title="سجل المشتريات">
+                        <span>سجل المشتريات</span>
+                    </a>
+                </div>
             </div>
 
             <!-- المخزون -->
