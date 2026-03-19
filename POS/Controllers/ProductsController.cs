@@ -21,72 +21,30 @@ namespace POS.Controllers
         // GET: Products
         public async Task<IActionResult> Index()
         {
-            var products = await _context.Products
+            var products =  _context.Products
                 .Include(p => p.Category)
                 .AsQueryable();
 
             // Apply filters
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                query = query.Where(p => 
-                    p.Name.Contains(searchTerm) || 
-                    p.Barcode.Contains(searchTerm));
-            }
-
-            if (categoryId.HasValue && categoryId.Value > 0)
-            {
-                query = query.Where(p => p.CategoryId == categoryId.Value);
-            }
-
-            // Order by newest first
-            query = query.OrderByDescending(p => p.Id);
-
-            // Create paginated list
-            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
-
-            // Pass data to view
-            ViewBag.Categories = await _context.Categories.ToListAsync();
-
-            // Apply filters
-            if (!string.IsNullOrEmpty(searchTerm))
-            {
-                query = query.Where(p => 
-                    p.Name.Contains(searchTerm) || 
-                    p.Barcode.Contains(searchTerm));
-            }
-
-            if (categoryId.HasValue && categoryId.Value > 0)
-            {
-                query = query.Where(p => p.CategoryId == categoryId.Value);
-            }
-
-            query = query.OrderByDescending(p => p.Id);
-
-            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
+            
 
             var result = new
             {
-                products = paginatedProducts.Select(p => new
+                products = products.Select(p => new
                 {
                     id = p.Id,
                     name = p.Name,
                     barcode = p.Barcode,
                     categoryId = p.CategoryId,
-                    categoryName = p.Category?.Name ?? "غير مصنف",
-                    purchasePrice = p.PurchasePrice,
+                    categoryName = p.Category.Name ?? "غير مصنف",
                     salePrice = p.SalePrice,
-                    quantity = p.Quantity,
                     minStock = p.MinStock,
                     status = p.Status.ToString(),
                     imagePath = p.ImagePath,
                     engineNumber = p.EngineNumber,
                     chassisNumber = p.ChassisNumber
                 }),
-                pageIndex = paginatedProducts.PageIndex,
-                totalPages = paginatedProducts.TotalPages,
-                totalCount = paginatedProducts.TotalCount,
-                hasNextPage = paginatedProducts.HasNextPage,
-                hasPreviousPage = paginatedProducts.HasPreviousPage
+          
             };
 
             return Ok(result);
@@ -108,9 +66,7 @@ namespace POS.Controllers
                 id = product.Id,
                 name = product.Name,
                 categoryName = product.Category?.Name ?? "غير مصنف",
-                purchasePrice = product.PurchasePrice,
                 salePrice = product.SalePrice,
-                quantity = product.Quantity,
                 minStock = product.MinStock,
                 barcode = product.Barcode,
                 status = product.Status.ToString(),
@@ -137,9 +93,7 @@ namespace POS.Controllers
                 id = product.Id,
                 name = product.Name,
                 categoryId = product.CategoryId,
-                purchasePrice = product.PurchasePrice,
                 salePrice = product.SalePrice,
-                quantity = product.Quantity,
                 minStock = product.MinStock,
                 barcode = product.Barcode,
                 status = product.Status,
@@ -168,9 +122,7 @@ namespace POS.Controllers
             // Update basic properties
             product.Name = dto.Name;
             product.CategoryId = dto.CategoryId;
-            product.PurchasePrice = dto.PurchasePrice;
             product.SalePrice = dto.SalePrice;
-            product.Quantity = dto.Quantity;
             product.MinStock = dto.MinStock;
             product.Barcode = dto.Barcode;
             product.Status = dto.Status;
@@ -224,8 +176,7 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList(),
                 Status = ProductStatus.New,  // Auto-default to "New"
                 MinStock =1,                 // Smart default
-                Quantity = 1,                 // Start with 1
-                PurchasePrice = 0,
+             
                 SalePrice = 0
             };
 

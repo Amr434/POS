@@ -92,15 +92,13 @@
                 <tbody id="productsTableBody">
                     @foreach (var product in Model)
                     {
-                        var stockClass = product.Quantity == 0 ? "out" : (product.Quantity <= (product.Quantity) ? "low" : "available");
-                        var stockText = product.Quantity == 0 ? "نفذ من المخزون" : (product.Quantity <= (product.Quantity) ? "مخزون منخفض" : "متوفر");
                         var statusClass = product.Status.ToString().ToLower() == "new" ? "new" : (product.Status.ToString().ToLower() == "reserved" ? "reserved" : "sold");
                         var statusText = product.Status.ToString() == "New" ? "جديد" : (product.Status.ToString() == "Reserved" ? "محجوز" : "مُباع");
 
                         <tr data-name="@product.Name"
                             data-barcode="@product.Barcode"
                             data-category="@product.CategoryId"
-                            data-stock="@stockClass">
+                         >
                             <td>
                                 <div class="product-image">
                                     @if (!string.IsNullOrEmpty(product.ImagePath))
@@ -128,12 +126,7 @@
                                 <span class="category-badge">@(product.Category?.Name ?? "غير مصنف")</span>
                             </td>
                             <td class="price-cell">@product.SalePrice.ToString("N0") ج.م</td>
-                            <td>
-                                <span class="stock-badge @stockClass">
-                                    <i class="bi bi-box"></i>
-                                    @product.Quantity
-                                </span>
-                            </td>
+                            
                             <td>
                                 <span class="status-badge @statusClass">@statusText</span>
                             </td>

@@ -1,6 +1,5 @@
 ﻿@model Domain.Entities.Product
 @{
-    var stockClass = Model.Quantity == 0 ? "out" : (Model.Quantity <= Model.MinStock ? "low" : "available");
     var statusClass = Model.Status.ToString().ToLower();
     var statusText = Model.Status == Domain.Enums.ProductStatus.New ?"جديد": 
     Model.Status == Domain.Enums.ProductStatus.Reserved? 
@@ -10,7 +9,7 @@
 <tr data-name="@Model.Name"
     data-barcode="@Model.Barcode"
     data-category="@Model.CategoryId"
-    data-stock="@stockClass">
+>
     <td>
         <div class="product-image">
             @if (!string.IsNullOrEmpty(Model.ImagePath))
@@ -37,14 +36,8 @@
     <td>
         <span class="category-badge">@(Model.Category?.Name ?? "??? ????")</span>
     </td>
-    <td class="price-cell">@Model.PurchasePrice.ToString("N0") ج.م</td>
     <td class="price-cell">@Model.SalePrice.ToString("N0") ج.م</td>
-    <td>
-        <span class="stock-badge @stockClass">
-            <i class="bi bi-box"></i>
-            @Model.Quantity
-        </span>
-    </td>
+
     <td>
         <span class="status-badge @statusClass">@statusText</span>
     </td>
