@@ -1,4 +1,5 @@
-﻿using Domain.Entities;
+using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -13,6 +14,9 @@ namespace POS.Infrastructure.Data.Configurations
 
             builder.Property(p => p.TotalAmount).IsRequired();
             builder.Property(p => p.PurchaseDate).IsRequired();
+            builder.Property(p => p.Status)
+                   .IsRequired()
+                   .HasDefaultValue(PurchaseStatus.Draft);
 
             builder.HasOne(p => p.Supplier)
                    .WithMany()

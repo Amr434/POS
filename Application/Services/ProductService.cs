@@ -60,7 +60,7 @@ namespace POS.Application.Services
                 Name = p.Name,
                 Barcode = p.Barcode,
                 SalePrice = p.SalePrice,
-                CurrentStock = GetCurrentStock(p),
+                CurrentStock = p.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0,
                 MinStock = p.MinStock,
                 Status = p.Status.ToString(),
                 CategoryName = p.Category?.Name
@@ -80,7 +80,7 @@ namespace POS.Application.Services
                 Name = product.Name,
                 Barcode = product.Barcode,
                 SalePrice = product.SalePrice,
-                CurrentStock = GetCurrentStock(product),
+                CurrentStock = product.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0,
                 MinStock = product.MinStock,
                 Status = product.Status.ToString(),
                 CategoryName = product.Category?.Name
@@ -97,7 +97,7 @@ namespace POS.Application.Services
                 Id = p.Id,
                 Name = p.Name,
                 SalePrice = p.SalePrice,
-                CurrentStock = GetCurrentStock(p),
+                CurrentStock = p.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0,
                 MinStock = p.MinStock,
                 Status = p.Status.ToString(),
                 CategoryName = p.Category?.Name
@@ -115,7 +115,7 @@ namespace POS.Application.Services
                 Name = p.Name,
                 Barcode = p.Barcode,
                 SalePrice = p.SalePrice,
-                CurrentStock = GetCurrentStock(p),
+                CurrentStock = p.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0,
                 MinStock = p.MinStock,
                 Status = p.Status.ToString(),
                 CategoryName = p.Category?.Name
@@ -145,9 +145,5 @@ namespace POS.Application.Services
             return Result.SuccessResult();
         }
 
-        private static int GetCurrentStock(Product product)
-        {
-            return product.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0;
-        }
     }
 }

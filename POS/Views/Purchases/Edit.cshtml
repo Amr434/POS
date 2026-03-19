@@ -1,0 +1,27 @@
+@model POS.Models.PurchaseFormVm
+@{
+    ViewData["Title"] = $"تعديل مسودة شراء #{Model.Id}";
+    ViewData["IsEdit"] = true;
+    ViewData["FormAction"] = "Edit";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">تعديل مسودة شراء #@Model.Id</h3>
+    <a asp-action="Create" class="btn btn-outline-secondary">شراء جديد</a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+@await Html.PartialAsync("_PurchaseForm", Model)
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/purchases-form.js" asp-append-version="true"></script>
+}

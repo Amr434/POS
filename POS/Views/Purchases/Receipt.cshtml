@@ -1,0 +1,59 @@
+@model Domain.Entities.Purchase
+@{
+    ViewData["Title"] = $"فاتورة شراء #{Model.Id}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">فاتورة شراء #@Model.Id</h3>
+    <div class="d-flex gap-2">
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="bi bi-printer"></i> طباعة
+        </button>
+        <a asp-action="Create" class="btn btn-outline-secondary">شراء جديد</a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4"><strong>رقم الفاتورة:</strong> #@Model.Id</div>
+            <div class="col-md-4"><strong>التاريخ:</strong> @Model.PurchaseDate.ToString("yyyy-MM-dd")</div>
+            <div class="col-md-4"><strong>المورد:</strong> @(Model.Supplier?.Name ?? "بدون مورد")</div>
+        </div>
+    </div>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>سعر الشراء</th>
+                <th>الإجمالي</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.Product.Name</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitPrice.ToString("0.00")</td>
+                    <td>@((item.Quantity * item.UnitPrice).ToString("0.00"))</td>
+                </tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3" class="text-end">الإجمالي الكلي</th>
+                <th>@Model.TotalAmount.ToString("0.00")</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>

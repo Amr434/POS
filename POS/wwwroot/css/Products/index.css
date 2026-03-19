@@ -845,6 +845,7 @@
         grid-template-columns: 1fr;
     }
 
+@media (max-width: 1200px) {
     .motorcycle-fields-container {
         grid-template-columns: 1fr;
     }
@@ -920,12 +921,16 @@
     margin-bottom: 16px;
 }
 
+@media (max-width: 768px) {
+    .products-table {
+        font-size: 13px;
+  }
     .form-checkbox input[type="checkbox"] {
         width: 18px;
         height: 18px;
         cursor: pointer;
     }
-
+  }
 /* Preview styles */
 .preview-section {
     padding: 10px 0;

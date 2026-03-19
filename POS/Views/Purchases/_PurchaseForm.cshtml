@@ -1,0 +1,101 @@
+@model POS.Models.PurchaseFormVm
+@{
+    var isEdit = (bool?)ViewData["IsEdit"] == true;
+    var formAction = (string?)ViewData["FormAction"] ?? "CreateDraft";
+}
+
+<form asp-action="@formAction" asp-route-id="@(isEdit ? Model.Id : null)" method="post" id="purchase-form">
+    @Html.AntiForgeryToken()
+    <input asp-for="Id" type="hidden" />
+
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label asp-for="PurchaseDate" class="form-label"></label>
+            <input asp-for="PurchaseDate" type="date" class="form-control" />
+            <span asp-validation-for="PurchaseDate" class="text-danger"></span>
+        </div>
+        <div class="col-md-8">
+            <label asp-for="SupplierId" class="form-label"></label>
+            <select asp-for="SupplierId" asp-items="Model.Suppliers" class="form-select">
+                <option value="">بدون مورد</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">المنتجات</h5>
+        <button type="button" class="btn btn-outline-primary btn-sm" id="add-item-row">
+            <i class="bi bi-plus-circle"></i> إضافة منتج
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table align-middle" id="purchase-items-table">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th style="width: 120px;">الكمية</th>
+                    <th style="width: 180px;">سعر الشراء</th>
+                    <th style="width: 180px;">الإجمالي</th>
+                    <th style="width: 60px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < Model.Items.Count; i++)
+                {
+                    <tr>
+                        <td>
+                            <select name="Items[@i].ProductId" class="form-select">
+                                <option value="">اختر المنتج</option>
+                                @foreach (var p in Model.Products)
+                                {
+                                    <option value="@p.Value" selected="@(Model.Items[i].ProductId.ToString() == p.Value ? "selected" : null)">@p.Text</option>
+                                }
+                            </select>
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Items[@i].ProductId" data-valmsg-replace="true"></span>
+                        </td>
+                        <td>
+                            <input name="Items[@i].Quantity" type="number" min="1" class="form-control quantity-input" value="@Model.Items[i].Quantity" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Items[@i].Quantity" data-valmsg-replace="true"></span>
+                        </td>
+                        <td>
+                            <input name="Items[@i].UnitPrice" type="number" min="0" step="0.01" class="form-control unit-price-input" value="@Model.Items[i].UnitPrice" />
+                            <span class="text-danger field-validation-valid" data-valmsg-for="Items[@i].UnitPrice" data-valmsg-replace="true"></span>
+                        </td>
+                        <td>
+                            <input type="text" class="form-control line-total-input" value="@Model.Items[i].LineTotal.ToString("0.00")" readonly />
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-link text-danger remove-item-row">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="text-end mb-3">
+        <strong>الإجمالي الكلي: <span id="purchase-grand-total">@Model.Total.ToString("0.00")</span></strong>
+    </div>
+
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> @(isEdit ? "حفظ المسودة" : "حفظ كمسودة")
+        </button>
+
+        @if (isEdit)
+        {
+            <button type="submit" class="btn btn-success" formaction="@Url.Action("Complete", "Purchases", new { id = Model.Id })" formmethod="post">
+                <i class="bi bi-check2-circle"></i> إكمال الشراء
+            </button>
+
+            <button type="submit" class="btn btn-outline-danger" formaction="@Url.Action("Delete", "Purchases", new { id = Model.Id })" formmethod="post" onclick="return confirm('هل أنت متأكد من حذف المسودة؟');">
+                <i class="bi bi-trash"></i> حذف المسودة
+            </button>
+        }
+    </div>
+</form>

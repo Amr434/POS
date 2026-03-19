@@ -21,22 +21,58 @@ namespace POS.Controllers
         // GET: Products
         public async Task<IActionResult> Index()
         {
-            var products =  _context.Products
+            var products = _context.Products
                 .Include(p => p.Category)
                 .AsQueryable();
 
             // Apply filters
-            
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(p => 
+                    p.Name.Contains(searchTerm) || 
+                    p.Barcode.Contains(searchTerm));
+            }
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            // Order by newest first
+            query = query.OrderByDescending(p => p.Id);
+
+            // Create paginated list
+            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
+
+            // Pass data to view
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+
+            // Apply filters
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(p => 
+                    p.Name.Contains(searchTerm) || 
+                    p.Barcode.Contains(searchTerm));
+            }
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            query = query.OrderByDescending(p => p.Id);
+
+            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
 
             var result = new
             {
-                products = products.Select(p => new
+                products = paginatedProducts.Select(p => new
                 {
                     id = p.Id,
                     name = p.Name,
                     barcode = p.Barcode,
                     categoryId = p.CategoryId,
-                    categoryName = p.Category.Name ?? "غير مصنف",
+                    categoryName = p.Category?.Name ?? "غير مصنف",
                     salePrice = p.SalePrice,
                     minStock = p.MinStock,
                     status = p.Status.ToString(),
@@ -44,7 +80,11 @@ namespace POS.Controllers
                     engineNumber = p.EngineNumber,
                     chassisNumber = p.ChassisNumber
                 }),
-          
+                pageIndex = paginatedProducts.PageIndex,
+                totalPages = paginatedProducts.TotalPages,
+                totalCount = paginatedProducts.TotalCount,
+                hasNextPage = paginatedProducts.HasNextPage,
+                hasPreviousPage = paginatedProducts.HasPreviousPage
             };
 
             return Ok(result);
@@ -276,6 +316,8 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList()
             };
 
+            // Optionally, you can show current stock in the edit view by summing InventoryBatches
+            ViewBag.CurrentStock = await _context.InventoryBatches.Where(b => b.ProductId == product.Id).SumAsync(b => b.RemainingQuantity);
             return View(viewModel);
         }
 
