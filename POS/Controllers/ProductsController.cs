@@ -28,7 +28,19 @@ namespace POS.Controllers
                 .ToListAsync();
             ViewBag.Categories = await _context.Categories.ToListAsync();
 
-            return View(products);
+            // Calculate current stock for each product using InventoryBatch
+            var productViewModels = products.Select(p => new {
+                p.Id,
+                p.Name,
+                p.Barcode,
+                p.SalePrice,
+                CurrentStock = p.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0,
+                p.MinStock,
+                p.Status,
+                CategoryName = p.Category?.Name
+            }).ToList();
+
+            return View(productViewModels);
         }
 
         // GET: Products/Details/5
@@ -154,6 +166,8 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList()
             };
 
+            // Optionally, you can show current stock in the edit view by summing InventoryBatches
+            ViewBag.CurrentStock = await _context.InventoryBatches.Where(b => b.ProductId == product.Id).SumAsync(b => b.RemainingQuantity);
             return View(viewModel);
         }
 
