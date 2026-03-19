@@ -1,4 +1,4 @@
-﻿using Domain.Entities;
+using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,7 +12,7 @@ namespace POS.Infrastructure.Data.Configurations
             builder.HasKey(si => si.Id);
 
             builder.Property(si => si.Quantity).IsRequired();
-            builder.Property(si => si.Price).IsRequired();
+            builder.Property(si => si.UnitSalePrice).IsRequired();
             builder.Property(si => si.Total).IsRequired();
 
             builder.HasOne(si => si.Sale)

@@ -1,16 +1,9 @@
-﻿using Application.Services;
-using Domain.Entities;
-using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
-using POS.Models;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
+using Domain.Entities;
+using Domain.Enums;
 
 namespace POS.Controllers
 {
@@ -18,7 +11,6 @@ namespace POS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
-        private const int PageSize = 10; // Items per page
 
         public ProductsController(AppDbContext context, IWebHostEnvironment environment)
         {
@@ -27,9 +19,9 @@ namespace POS.Controllers
         }
 
         // GET: Products
-        public async Task<IActionResult> Index(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
+        public async Task<IActionResult> Index()
         {
-            var query = _context.Products
+            var products = await _context.Products
                 .Include(p => p.Category)
                 .AsQueryable();
 
@@ -54,20 +46,6 @@ namespace POS.Controllers
 
             // Pass data to view
             ViewBag.Categories = await _context.Categories.ToListAsync();
-            ViewBag.CurrentSearch = searchTerm;
-            ViewBag.CurrentCategory = categoryId;
-            ViewBag.PageNumber = pageNumber;
-
-            return View(paginatedProducts);
-        }
-
-        // GET: Products/GetPage - AJAX endpoint for pagination
-        [HttpGet]
-        public async Task<IActionResult> GetPage(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
-        {
-            var query = _context.Products
-                .Include(p => p.Category)
-                .AsQueryable();
 
             // Apply filters
             if (!string.IsNullOrEmpty(searchTerm))
@@ -266,16 +244,14 @@ namespace POS.Controllers
                     // Smart default for MinStock if not provided
                     if (model.MinStock == 0)
                     {
-                        model.MinStock = (int)(model.Quantity * 0.2); // 20% of initial quantity
+                        model.MinStock = 5;
                     }
 
                     var product = new Product
                     {
                         Name = model.Name,
                         CategoryId = model.CategoryId,
-                        PurchasePrice = model.PurchasePrice,
                         SalePrice = model.SalePrice,
-                        Quantity = model.Quantity,
                         MinStock = model.MinStock,
                         Barcode = model.Barcode,
                         Status = model.Status,
@@ -339,9 +315,7 @@ namespace POS.Controllers
             {
                 Name = product.Name,
                 CategoryId = product.CategoryId,
-                PurchasePrice = product.PurchasePrice,
                 SalePrice = product.SalePrice,
-                Quantity = product.Quantity,
                 MinStock = product.MinStock,
                 Barcode = product.Barcode,
                 Status = product.Status,
@@ -369,9 +343,7 @@ namespace POS.Controllers
 
                     product.Name = model.Name;
                     product.CategoryId = model.CategoryId;
-                    product.PurchasePrice = model.PurchasePrice;
                     product.SalePrice = model.SalePrice;
-                    product.Quantity = model.Quantity;
                     product.MinStock = model.MinStock;
                     product.Barcode = model.Barcode;
                     product.Status = model.Status;

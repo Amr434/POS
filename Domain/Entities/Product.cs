@@ -9,11 +9,8 @@ namespace Domain.Entities
     {
         public string Name { get; set; }       // اسم المنتج
         public string Barcode { get; set; }    // باركود
-        public decimal PurchasePrice { get; set; } // سعر الشراء
-        public decimal SalePrice { get; set; }     // سعر البيع
-        public int Quantity { get; set; }          // الكمية
-        public int MinStock { get; set; }   
-        // الحد الأدنى للمخزون
+        public decimal SalePrice { get; set; }     // سعر البيع الافتراضي
+        public int MinStock { get; set; }   // الحد الأدنى للمخزون
         public string? ImagePath{ get; set; } 
         public ProductStatus Status { get; set; }  // الحالة (جديد/محجوز/مباع)
 
@@ -23,5 +20,8 @@ namespace Domain.Entities
         // Optional for motorcycles
         public string ?EngineNumber { get; set; }
         public string? ChassisNumber { get; set; }
+
+        // Navigation property for inventory batches
+        public ICollection<InventoryBatch> InventoryBatches { get; set; }
     }
 }
