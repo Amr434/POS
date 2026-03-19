@@ -1,9 +1,16 @@
+using Application.Services;
+using Domain.Entities;
+using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
-using Domain.Entities;
-using Domain.Enums;
+using POS.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace POS.Controllers
 {
@@ -11,6 +18,7 @@ namespace POS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private const int PageSize = 10; // Items per page
 
         public ProductsController(AppDbContext context, IWebHostEnvironment environment)
         {
@@ -19,9 +27,9 @@ namespace POS.Controllers
         }
 
         // GET: Products
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
         {
-            var products = _context.Products
+            var query = _context.Products
                 .Include(p => p.Category)
                 .AsQueryable();
 
@@ -46,6 +54,20 @@ namespace POS.Controllers
 
             // Pass data to view
             ViewBag.Categories = await _context.Categories.ToListAsync();
+            ViewBag.CurrentSearch = searchTerm;
+            ViewBag.CurrentCategory = categoryId;
+            ViewBag.PageNumber = pageNumber;
+
+            return View(paginatedProducts);
+        }
+
+        // GET: Products/GetPage - AJAX endpoint for pagination
+        [HttpGet]
+        public async Task<IActionResult> GetPage(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
+        {
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsQueryable();
 
             // Apply filters
             if (!string.IsNullOrEmpty(searchTerm))
@@ -216,7 +238,6 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList(),
                 Status = ProductStatus.New,  // Auto-default to "New"
                 MinStock =1,                 // Smart default
-             
                 SalePrice = 0
             };
 
@@ -232,11 +253,6 @@ namespace POS.Controllers
             {
                 try
                 {
-                    // Smart default for MinStock if not provided
-                    if (model.MinStock == 0)
-                    {
-                        model.MinStock = 5;
-                    }
 
                     var product = new Product
                     {
@@ -316,8 +332,6 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList()
             };
 
-            // Optionally, you can show current stock in the edit view by summing InventoryBatches
-            ViewBag.CurrentStock = await _context.InventoryBatches.Where(b => b.ProductId == product.Id).SumAsync(b => b.RemainingQuantity);
             return View(viewModel);
         }
 
