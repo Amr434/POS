@@ -13,7 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 // Set database path
-var dbPath = Path.Combine(@"D://", "POS.db");
+var dbPath = Path.Combine(@"./", "POS.db");
 
 // Configure DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -37,7 +37,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.EnsureCreated(); 
-    // ✅ Creates DB & tables if they don't exist
 }
 
 // Configure the HTTP request pipeline.

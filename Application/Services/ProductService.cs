@@ -1,4 +1,4 @@
-﻿using Application.Common.Model;
+using Application.Common.Model;
 using Application.Interfaces;
 using Domain.Entities;
 using Domain.Enums;
@@ -31,9 +31,7 @@ namespace POS.Application.Services
             {
                 Name = dto.Name,
                 Barcode = dto.Barcode,
-                PurchasePrice = dto.PurchasePrice,
                 SalePrice = dto.SalePrice,
-                Quantity = dto.Quantity,
                 MinStock = dto.MinStock,
                 CategoryId = dto.CategoryId,
                 Status = (ProductStatus)dto.Status
@@ -61,7 +59,9 @@ namespace POS.Application.Services
                 Id = p.Id,
                 Name = p.Name,
                 Barcode = p.Barcode,
-                Quantity = p.Quantity,
+                SalePrice = p.SalePrice,
+                CurrentStock = GetCurrentStock(p),
+                MinStock = p.MinStock,
                 Status = p.Status.ToString(),
                 CategoryName = p.Category?.Name
             });
@@ -79,7 +79,9 @@ namespace POS.Application.Services
                 Id = product.Id,
                 Name = product.Name,
                 Barcode = product.Barcode,
-                Quantity = product.Quantity,
+                SalePrice = product.SalePrice,
+                CurrentStock = GetCurrentStock(product),
+                MinStock = product.MinStock,
                 Status = product.Status.ToString(),
                 CategoryName = product.Category?.Name
             };
@@ -94,7 +96,8 @@ namespace POS.Application.Services
             {
                 Id = p.Id,
                 Name = p.Name,
-                Quantity = p.Quantity,
+                SalePrice = p.SalePrice,
+                CurrentStock = GetCurrentStock(p),
                 MinStock = p.MinStock,
                 Status = p.Status.ToString(),
                 CategoryName = p.Category?.Name
@@ -111,7 +114,9 @@ namespace POS.Application.Services
                 Id = p.Id,
                 Name = p.Name,
                 Barcode = p.Barcode,
-                Quantity = p.Quantity,
+                SalePrice = p.SalePrice,
+                CurrentStock = GetCurrentStock(p),
+                MinStock = p.MinStock,
                 Status = p.Status.ToString(),
                 CategoryName = p.Category?.Name
             });
@@ -131,15 +136,18 @@ namespace POS.Application.Services
 
             product.Name = dto.Name;
             product.Barcode = dto.Barcode;
-            product.PurchasePrice = dto.PurchasePrice;
             product.SalePrice = dto.SalePrice;
-            product.Quantity = dto.Quantity;
             product.MinStock = dto.MinStock;
             product.CategoryId = dto.CategoryId;
             product.Status = (ProductStatus)dto.Status;
 
             await _repo.UpdateAsync(product);
             return Result.SuccessResult();
+        }
+
+        private static int GetCurrentStock(Product product)
+        {
+            return product.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Application.Interfaces;
+using Application.Interfaces;
 using Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
@@ -28,10 +28,16 @@ namespace Infrastructure.Repositories
         }
 
         public async Task<IEnumerable<Product>> GetAllAsync() =>
-            await _context.Products.Include(p => p.Category).ToListAsync();
+            await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.InventoryBatches)
+                .ToListAsync();
 
         public async Task<Product> GetByIdAsync(int id) =>
-            await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id);
+            await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.InventoryBatches)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
         public async Task UpdateAsync(Product product)
         {
@@ -41,8 +47,9 @@ namespace Infrastructure.Repositories
         public async Task<IEnumerable<Product>> GetLowStockAsync()
         {
             return await _context.Products
-                .Where(p => p.Quantity <= p.MinStock)
+                .Where(p => (p.InventoryBatches.Sum(b => (int?)b.RemainingQuantity) ?? 0) <= p.MinStock)
                 .Include(p => p.Category)
+                .Include(p => p.InventoryBatches)
                 .ToListAsync();
         }
 
@@ -51,6 +58,7 @@ namespace Infrastructure.Repositories
             return await _context.Products
                 .Where(p => p.Name.Contains(term) || p.Barcode.Contains(term))
                 .Include(p => p.Category)
+                .Include(p => p.InventoryBatches)
                 .ToListAsync();
         }
     }

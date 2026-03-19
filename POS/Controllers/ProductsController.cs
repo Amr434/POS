@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
@@ -23,6 +23,7 @@ namespace POS.Controllers
         {
             var products = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.InventoryBatches)
                 .OrderByDescending(p => p.Id)
                 .ToListAsync();
             ViewBag.Categories = await _context.Categories.ToListAsync();
@@ -54,8 +55,6 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList(),
                 Status = ProductStatus.New,  // Auto-default to "New"
                 MinStock = 5,                 // Smart default
-                Quantity = 1,                 // Start with 1
-                PurchasePrice = 0,
                 SalePrice = 0
             };
 
@@ -74,16 +73,14 @@ namespace POS.Controllers
                     // Smart default for MinStock if not provided
                     if (model.MinStock == 0)
                     {
-                        model.MinStock = (int)(model.Quantity * 0.2); // 20% of initial quantity
+                        model.MinStock = 5;
                     }
 
                     var product = new Product
                     {
                         Name = model.Name,
                         CategoryId = model.CategoryId,
-                        PurchasePrice = model.PurchasePrice,
                         SalePrice = model.SalePrice,
-                        Quantity = model.Quantity,
                         MinStock = model.MinStock,
                         Barcode = model.Barcode,
                         Status = model.Status,
@@ -147,9 +144,7 @@ namespace POS.Controllers
             {
                 Name = product.Name,
                 CategoryId = product.CategoryId,
-                PurchasePrice = product.PurchasePrice,
                 SalePrice = product.SalePrice,
-                Quantity = product.Quantity,
                 MinStock = product.MinStock,
                 Barcode = product.Barcode,
                 Status = product.Status,
@@ -177,9 +172,7 @@ namespace POS.Controllers
 
                     product.Name = model.Name;
                     product.CategoryId = model.CategoryId;
-                    product.PurchasePrice = model.PurchasePrice;
                     product.SalePrice = model.SalePrice;
-                    product.Quantity = model.Quantity;
                     product.MinStock = model.MinStock;
                     product.Barcode = model.Barcode;
                     product.Status = model.Status;

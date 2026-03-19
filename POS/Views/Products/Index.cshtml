@@ -1,4 +1,4 @@
-﻿@using Domain.Entities
+@using Domain.Entities
 @model IEnumerable<Product>
 @{
     ViewData["Title"] = "إدارة المنتجات";
@@ -95,7 +95,6 @@
                         <th>الصورة</th>
                         <th>المنتج</th>
                         <th>الفئة</th>
-                        <th>سعر الشراء</th>
                         <th>سعر البيع</th>
                         <th>الكمية</th>
                         <th>الحالة</th>
@@ -105,8 +104,9 @@
                 <tbody id="productsTableBody">
                     @foreach (var product in Model)
                     {
-                        var stockClass = product.Quantity == 0 ? "out" : (product.Quantity <= (product.Quantity) ? "low" : "available");
-                        var stockText = product.Quantity == 0 ? "نفذ من المخزون" : (product.Quantity <= (product.Quantity) ? "مخزون منخفض" : "متوفر");
+                        var currentStock = product.InventoryBatches?.Sum(b => b.RemainingQuantity) ?? 0;
+                        var stockClass = currentStock == 0 ? "out" : (currentStock <= product.MinStock ? "low" : "available");
+                        var stockText = currentStock == 0 ? "نفذ من المخزون" : (currentStock <= product.MinStock ? "مخزون منخفض" : "متوفر");
                         var statusClass = product.Status.ToString().ToLower() == "new" ? "new" : (product.Status.ToString().ToLower() == "reserved" ? "reserved" : "sold");
                         var statusText = product.Status.ToString() == "New" ? "جديد" : (product.Status.ToString() == "Reserved" ? "محجوز" : "مُباع");
 
@@ -140,12 +140,11 @@
                             <td>
                                 <span class="category-badge">@(product.Category?.Name ?? "غير مصنف")</span>
                             </td>
-                            <td class="price-cell">@product.PurchasePrice.ToString("N0") ج.م</td>
                             <td class="price-cell">@product.SalePrice.ToString("N0") ج.م</td>
                             <td>
-                                <span class="stock-badge @stockClass">
+                                <span class="stock-badge @stockClass" title="@stockText">
                                     <i class="bi bi-box"></i>
-                                    @product.Quantity
+                                    @currentStock
                                 </span>
                             </td>
                             <td>

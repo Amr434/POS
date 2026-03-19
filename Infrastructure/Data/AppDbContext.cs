@@ -22,6 +22,7 @@ namespace POS.Infrastructure.Data
         public DbSet<PurchaseItem> PurchaseItems { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<InventoryBatch> InventoryBatches { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -1,4 +1,4 @@
-﻿using Domain.Enums;
+using Domain.Enums;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,17 +11,9 @@ public class CreateProductVm
     [Required(ErrorMessage = "الفئة مطلوبة")]
     public int CategoryId { get; set; }
 
-    [Required(ErrorMessage = "سعر الشراء مطلوب")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "سعر غير صحيح")]
-    public decimal PurchasePrice { get; set; }
-
     [Required(ErrorMessage = "سعر البيع مطلوب")]
     [Range(0.01, double.MaxValue, ErrorMessage = "سعر غير صحيح")]
     public decimal SalePrice { get; set; }
-
-    [Required(ErrorMessage = "الكمية مطلوبة")]
-    [Range(0, int.MaxValue)]
-    public int Quantity { get; set; }
 
     [Range(0, int.MaxValue)]
     public int MinStock { get; set; } = 5;
