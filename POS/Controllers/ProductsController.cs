@@ -1,9 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Application.Services;
+using Domain.Entities;
+using Domain.Enums;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
-using Domain.Entities;
-using Domain.Enums;
+using POS.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace POS.Controllers
 {
@@ -11,6 +18,7 @@ namespace POS.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IWebHostEnvironment _environment;
+        private const int PageSize = 10; // Items per page
 
         public ProductsController(AppDbContext context, IWebHostEnvironment environment)
         {
@@ -19,31 +27,215 @@ namespace POS.Controllers
         }
 
         // GET: Products
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
         {
-            var products = await _context.Products
+            var query = _context.Products
                 .Include(p => p.Category)
-                .OrderByDescending(p => p.Id)
-                .ToListAsync();
-            ViewBag.Categories = await _context.Categories.ToListAsync();
+                .AsQueryable();
 
-            return View(products);
+            // Apply filters
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(p => 
+                    p.Name.Contains(searchTerm) || 
+                    p.Barcode.Contains(searchTerm));
+            }
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            // Order by newest first
+            query = query.OrderByDescending(p => p.Id);
+
+            // Create paginated list
+            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
+
+            // Pass data to view
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+            ViewBag.CurrentSearch = searchTerm;
+            ViewBag.CurrentCategory = categoryId;
+            ViewBag.PageNumber = pageNumber;
+
+            return View(paginatedProducts);
         }
 
-        // GET: Products/Details/5
-        public async Task<IActionResult> Details(int? id)
+        // GET: Products/GetPage - AJAX endpoint for pagination
+        [HttpGet]
+        public async Task<IActionResult> GetPage(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
         {
-            if (id == null)
-                return NotFound();
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsQueryable();
 
+            // Apply filters
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(p => 
+                    p.Name.Contains(searchTerm) || 
+                    p.Barcode.Contains(searchTerm));
+            }
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            query = query.OrderByDescending(p => p.Id);
+
+            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
+
+            var result = new
+            {
+                products = paginatedProducts.Select(p => new
+                {
+                    id = p.Id,
+                    name = p.Name,
+                    barcode = p.Barcode,
+                    categoryId = p.CategoryId,
+                    categoryName = p.Category?.Name ?? "غير مصنف",
+                    purchasePrice = p.PurchasePrice,
+                    salePrice = p.SalePrice,
+                    quantity = p.Quantity,
+                    minStock = p.MinStock,
+                    status = p.Status.ToString(),
+                    imagePath = p.ImagePath,
+                    engineNumber = p.EngineNumber,
+                    chassisNumber = p.ChassisNumber
+                }),
+                pageIndex = paginatedProducts.PageIndex,
+                totalPages = paginatedProducts.TotalPages,
+                totalCount = paginatedProducts.TotalCount,
+                hasNextPage = paginatedProducts.HasNextPage,
+                hasPreviousPage = paginatedProducts.HasPreviousPage
+            };
+
+            return Ok(result);
+        }
+
+        // GET: Products/GetDetails/5 - For Preview Modal
+        [HttpGet]
+        public async Task<IActionResult> GetDetails(int id)
+        {
             var product = await _context.Products
                 .Include(p => p.Category)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (product == null)
-                return NotFound();
+                return NotFound(new { error = "المنتج غير موجود" });
 
-            return View(product);
+            return Ok(new
+            {
+                id = product.Id,
+                name = product.Name,
+                categoryName = product.Category?.Name ?? "غير مصنف",
+                purchasePrice = product.PurchasePrice,
+                salePrice = product.SalePrice,
+                quantity = product.Quantity,
+                minStock = product.MinStock,
+                barcode = product.Barcode,
+                status = product.Status.ToString(),
+                engineNumber = product.EngineNumber,
+                chassisNumber = product.ChassisNumber,
+                imagePath = product.ImagePath
+            });
+        }
+
+        // GET: Products/GetForEdit/5 - For Edit Modal
+        [HttpGet]
+        public async Task<IActionResult> GetForEdit(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+                return NotFound(new { error = "المنتج غير موجود" });
+
+            var categories = await _context.Categories
+                .Select(c => new { value = c.Id, text = c.Name })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                id = product.Id,
+                name = product.Name,
+                categoryId = product.CategoryId,
+                purchasePrice = product.PurchasePrice,
+                salePrice = product.SalePrice,
+                quantity = product.Quantity,
+                minStock = product.MinStock,
+                barcode = product.Barcode,
+                status = product.Status,
+                engineNumber = product.EngineNumber,
+                chassisNumber = product.ChassisNumber,
+                imagePath = product.ImagePath,
+                isMotorcycle = !string.IsNullOrEmpty(product.EngineNumber) || !string.IsNullOrEmpty(product.ChassisNumber),
+                categories = categories
+            });
+        }
+
+        // POST: Products/UpdateQuick - For Quick Edit from Modal
+        [HttpPost]
+        public async Task<IActionResult> UpdateQuick([FromForm] QuickEditProductDto dto) // ✅ Use [FromForm]
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                return BadRequest(new { error = "البيانات غير صالحة", details = errors });
+            }
+
+            var product = await _context.Products.FindAsync(dto.Id);
+            if (product == null)
+                return NotFound(new { error = "المنتج غير موجود" });
+
+            // Update basic properties
+            product.Name = dto.Name;
+            product.CategoryId = dto.CategoryId;
+            product.PurchasePrice = dto.PurchasePrice;
+            product.SalePrice = dto.SalePrice;
+            product.Quantity = dto.Quantity;
+            product.MinStock = dto.MinStock;
+            product.Barcode = dto.Barcode;
+            product.Status = dto.Status;
+
+            // Handle motorcycle fields
+            if (dto.IsMotorcycle)
+            {
+                product.EngineNumber = dto.EngineNumber;
+                product.ChassisNumber = dto.ChassisNumber;
+            }
+            else
+            {
+                product.EngineNumber = null;
+                product.ChassisNumber = null;
+            }
+
+            // Handle image upload
+            if (dto.Image != null && dto.Image.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(_environment.WebRootPath, "images", "products");
+                Directory.CreateDirectory(uploadsFolder);
+
+                var uniqueFileName = $"{Guid.NewGuid()}_{dto.Image.FileName}";
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await dto.Image.CopyToAsync(fileStream);
+                }
+
+                product.ImagePath = $"/images/products/{uniqueFileName}";
+            }
+
+            try
+            {
+                _context.Update(product);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "تم تحديث المنتج بنجاح" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = $"حدث خطأ أثناء التحديث: {ex.Message}" });
+            }
         }
 
         // GET: Products/Create
@@ -53,7 +245,7 @@ namespace POS.Controllers
             {
                 Categories = await GetCategoriesSelectList(),
                 Status = ProductStatus.New,  // Auto-default to "New"
-                MinStock = 5,                 // Smart default
+                MinStock =1,                 // Smart default
                 Quantity = 1,                 // Start with 1
                 PurchasePrice = 0,
                 SalePrice = 0
@@ -127,7 +319,7 @@ namespace POS.Controllers
                 }
             }
 
-          
+
             // If we got here, something failed, redisplay form
             model.Categories = await GetCategoriesSelectList();
             return View(model);
@@ -270,4 +462,6 @@ namespace POS.Controllers
                 .ToListAsync();
         }
     }
+
+    // DTO for Quick Edit
 }

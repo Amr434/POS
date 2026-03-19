@@ -1,11 +1,11 @@
-﻿@using Domain.Entities
-@model IEnumerable<Product>
+﻿@model POS.Models.PaginatedList<Domain.Entities.Product>
+@using Domain.Entities
 @{
     ViewData["Title"] = "إدارة المنتجات";
     var categories = ViewBag.Categories as IEnumerable<Category>;
 }
 
-<link rel="stylesheet" href="~/css/Products/index.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/Products/index.css" />
 
 <div class="products-page">
     <!-- Alerts -->
@@ -19,7 +19,7 @@
 
     @if (TempData["ErrorMessage"] != null)
     {
-                <div class="alert alert-error" id="errorAlert">
+        <div class="alert alert-error" id="errorAlert">
             <i class="bi bi-exclamation-triangle-fill"></i>
             <span>@TempData["ErrorMessage"]</span>
         </div>
@@ -38,8 +38,10 @@
             <div class="filter-group">
                 <label class="filter-label">اسم المنتج أو الباركود...</label>
                 <div class="search-wrapper">
-                    <i class="bi bi-search search-icon" ></i>
-                    <input type="text" class="search-input" id="searchInput" placeholder="ابحث بالاسم أو الباركود...">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" id="searchInput" 
+                           placeholder="ابحث بالاسم أو الباركود..." 
+                           value="@ViewBag.CurrentSearch">
                 </div>
             </div>
 
@@ -47,48 +49,34 @@
                 <label class="filter-label">التصنيف</label>
                 <select class="filter-select" id="categoryFilter">
                     <option value="">جميع التصنيفات</option>
-                    @if ( categories != null)
+                    @if (categories != null)
                     {
                         foreach (var category in categories)
                         {
-                            <option value="@category.Id">@category.Name</option>
+                            var selected = ViewBag.CurrentCategory == category.Id ? "selected" : "";
+                            <option value="@category.Id" selected="@selected">
+                                @category.Name
+                            </option>
                         }
                     }
                 </select>
             </div>
-
-            @* <div class="filter-group">
-                <label class="filter-label">حالة المخزون</label>
-                <select class="filter-select" id="stockFilter">
-                    <option value="">الكل</option>
-                    <option value="available">متوفر</option>
-                    <option value="low">مخزون منخفض</option>
-                    <option value="out">نفذ من المخزون</option>
-                </select>
-            </div> *@
-
-        @*    <div class="filter-group">
-                <label class="filter-label">&nbsp;</label>
-                <button class="btn-search" onclick="applyFilters()">
-                    <i class="bi bi-search"></i>
-                    بحث
-                </button>
-            </div> *@
         </div>
     </div>
 
     <!-- Products Table -->
     <div class="products-table-card">
         <div class="table-header">
-            <h3 class="table-title">قائمة المنتجات (@Model.Count() منتج)</h3>
+            <h3 class="table-title">
+                قائمة المنتجات (<span id="totalCount">@Model.TotalCount</span> منتج)
+            </h3>
             <a asp-action="Create" class="btn-add">
                 <i class="bi bi-plus-circle"></i>
                 إضافة منتج جديد
             </a>
         </div>
 
-        @if (Model.Any())
-        {
+        <div class="table-container">
             <table class="products-table">
                 <thead>
                     <tr>
@@ -105,9 +93,8 @@
                 <tbody id="productsTableBody">
                     @foreach (var product in Model)
                     {
-                        var stockClass = product.Quantity == 0 ? "out" : (product.Quantity <= (product.Quantity) ? "low" : "available");
-                        var stockText = product.Quantity == 0 ? "نفذ من المخزون" : (product.Quantity <= (product.Quantity) ? "مخزون منخفض" : "متوفر");
-                        var statusClass = product.Status.ToString().ToLower() == "new" ? "new" : (product.Status.ToString().ToLower() == "reserved" ? "reserved" : "sold");
+                        var stockClass = product.Quantity == 0 ? "out" : (product.Quantity <= product.MinStock ? "low" : "available");
+                        var statusClass = product.Status.ToString().ToLower();
                         var statusText = product.Status.ToString() == "New" ? "جديد" : (product.Status.ToString() == "Reserved" ? "محجوز" : "مُباع");
 
                         <tr data-name="@product.Name"
@@ -143,20 +130,21 @@
                             <td class="price-cell">@product.PurchasePrice.ToString("N0") ج.م</td>
                             <td class="price-cell">@product.SalePrice.ToString("N0") ج.م</td>
                             <td>
-                                <span class="stock-badge @stockClass">
-                                    <i class="bi bi-box"></i>
-                                    @product.Quantity
-                                </span>
+                             
+                                <h6>
+                                    @product.Quantity.ToString()
+
+                                </h6>
                             </td>
                             <td>
                                 <span class="status-badge @statusClass">@statusText</span>
                             </td>
                             <td>
                                 <div class="actions-cell">
-                                    <a asp-action="Details" asp-route-id="@product.Id" class="btn-action btn-view" title="عرض">
+                                    <a href="javascript:void(0)" onclick="openPreviewModal(@product.Id)" class="btn-action btn-view" title="عرض">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@product.Id" class="btn-action btn-edit" title="تعديل">
+                                    <a href="javascript:void(0)" onclick="openEditModal(@product.Id)" class="btn-action btn-edit" title="تعديل">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     <button onclick="openDeleteModal(@product.Id, '@product.Name')" class="btn-action btn-delete" title="حذف">
@@ -168,19 +156,59 @@
                     }
                 </tbody>
             </table>
-        }
-        else
-        {
-            <div class="empty-state">
-                <i class="bi bi-inbox"></i>
-                <h3>لا توجد منتجات</h3>
-                <p>قم بإضافة منتج جديد للبدء</p>
-                <a asp-action="Create" class="btn-add">
-                    <i class="bi bi-plus-circle"></i>
-                    إضافة منتج
-                </a>
-            </div>
-        }
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        عرض <span id="itemsFrom">@((Model.PageIndex - 1) * 10 + 1)</span>
+                        إلى <span id="itemsTo">@Math.Min(Model.PageIndex * 10, Model.TotalCount)</span>
+                        من <span id="itemsTotal">@Model.TotalCount</span>
+                    </div>
+    
+                    <button class="pagination-btn" id="prevPageBtn" 
+                            onclick="goToPage(@(Model.PageIndex - 1))" 
+                            @(!Model.HasPreviousPage ? "disabled" : "")>
+                        <i class="bi bi-chevron-right"></i>
+                        السابق
+                    </button>
+
+                    <div class="pagination-numbers" id="paginationNumbers">
+                        @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                        {
+                            <button class="pagination-number @(i == Model.PageIndex ? "active" : "")" 
+                                    onclick="goToPage(@i)">
+                                @i
+                            </button>
+                        }
+                    </div>
+
+                    <button class="pagination-btn" id="nextPageBtn" 
+                            onclick="goToPage(@(Model.PageIndex + 1))" 
+                            @(!Model.HasNextPage ? "disabled" : "")>
+                        التالي
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+
+                    <button class="pagination-btn" id="lastPageBtn" 
+                            onclick="goToPage(@Model.TotalPages)" 
+                            @(!Model.HasNextPage ? "disabled" : "")>
+                        <i class="bi bi-chevron-double-left"></i>
+                    </button>
+                </div>
+
+                <div class="pagination-page-size">
+                    <label>عرض:</label>
+                    <select id="pageSizeSelect" onchange="changePageSize(this.value)">
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
@@ -210,7 +238,216 @@
     </div>
 </div>
 
+<!-- Preview/Details Modal -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2>تفاصيل المنتج</h2>
+        </div>
+        <div class="modal-body">
+            <div id="productPreviewContent">
+                <div class="preview-section">
+                    <div class="preview-image-container" id="previewImageContainer">
+                        <img id="previewImage" src="" alt="" style="max-width: 100%; border-radius: 12px;">
+                    </div>
+                    
+                    <div class="preview-grid">
+                        <div class="preview-item">
+                            <span class="preview-label">اسم المنتج:</span>
+                            <span class="preview-value" id="previewName"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">الفئة:</span>
+                            <span class="preview-value" id="previewCategory"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">سعر الشراء:</span>
+                            <span class="preview-value" id="previewPurchasePrice"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">سعر البيع:</span>
+                            <span class="preview-value" id="previewSalePrice"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">الكمية:</span>
+                            <span class="preview-value" id="previewQuantity"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">الحد الأدنى:</span>
+                            <span class="preview-value" id="previewMinStock"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">الباركود:</span>
+                            <span class="preview-value" id="previewBarcode"></span>
+                        </div>
+                        <div class="preview-item">
+                            <span class="preview-label">الحالة:</span>
+                            <span class="preview-value" id="previewStatus"></span>
+                        </div>
+                        <div class="preview-item" id="previewEngineContainer" style="display: none;">
+                            <span class="preview-label">رقم المحرك:</span>
+                            <span class="preview-value" id="previewEngine"></span>
+                        </div>
+                        <div class="preview-item" id="previewChassisContainer" style="display: none;">
+                            <span class="preview-label">رقم الشاسيه:</span>
+                            <span class="preview-value" id="previewChassis"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closePreviewModal()">
+                <i class="bi bi-x-circle"></i>
+                إغلاق
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal - IMPROVED RESPONSIVE VERSION -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal-content modal-edit-large">
+        <div class="modal-header">
+            <h2>
+                <i class="bi bi-pencil-square"></i>
+                تعديل المنتج
+            </h2>
+            <button type="button" class="btn-close-modal" onclick="closeEditModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <form id="editProductForm">
+            <div class="modal-body">
+                <input type="hidden" id="editProductId">
+
+                <!-- Image Section - Compact -->
+                <div class="edit-image-section">
+                    <div class="current-image-preview" id="editImagePreview">
+                        <img id="editCurrentImage" src="" alt="" style="display: none;">
+                        <div class="no-image-placeholder" id="editNoImage">
+                            <i class="bi bi-image"></i>
+                            <span>لا توجد صورة</span>
+                        </div>
+                    </div>
+                    <div class="image-upload-control">
+                        <label for="editImageFile" class="btn-upload-image">
+                            <i class="bi bi-cloud-upload"></i>
+                            تغيير الصورة
+                        </label>
+                        <input type="file" id="editImageFile" accept="image/*" style="display: none;" onchange="previewEditImage(event)">
+                        <small class="form-hint">JPG, PNG أو GIF (حد أقصى 2MB)</small>
+                    </div>
+                </div>
+
+                <!-- Form Fields Grid -->
+                <div class="edit-form-grid">
+                    <!-- Product Name -->
+                    <div class="form-group form-full-width">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            اسم المنتج
+                        </label>
+                        <input type="text" class="form-control" id="editName" required>
+                    </div>
+
+                    <!-- Category -->
+                    <div class="form-group form-full-width">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            الفئة
+                        </label>
+                        <select class="form-control" id="editCategoryId" required>
+                            <option value="">اختر الفئة</option>
+                        </select>
+                    </div>
+
+                    <!-- Prices Row -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            سعر الشراء (ج.م)
+                        </label>
+                        <input type="number" class="form-control" id="editPurchasePrice" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            سعر البيع (ج.م)
+                        </label>
+                        <input type="number" class="form-control" id="editSalePrice" step="0.01" required>
+                    </div>
+
+                    <!-- Quantity Row -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            الكمية
+                        </label>
+                        <input type="number" class="form-control" id="editQuantity" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الحد الأدنى للمخزون</label>
+                        <input type="number" class="form-control" id="editMinStock">
+                    </div>
+
+                    <!-- Barcode and Status -->
+                    <div class="form-group">
+                        <label class="form-label">الباركود</label>
+                        <input type="text" class="form-control" id="editBarcode">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">الحالة</label>
+                        <select class="form-control" id="editStatus">
+                            <option value="0">جديد</option>
+                            <option value="1">محجوز</option>
+                            <option value="2">مُباع</option>
+                        </select>
+                    </div>
+
+                    <!-- Motorcycle Toggle -->
+                    <div class="form-group form-full-width">
+                        <label class="form-checkbox">
+                            <input type="checkbox" id="editIsMotorcycle" onchange="toggleMotorcycleFieldsEdit()">
+                            <span>دراجة نارية (إضافة رقم المحرك والشاسيه)</span>
+                        </label>
+                    </div>
+
+                    <!-- Motorcycle Fields -->
+                    <div id="editMotorcycleFields" class="motorcycle-fields-container" style="display: none;">
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-gear"></i>
+                                رقم المحرك
+                            </label>
+                            <input type="text" class="form-control" id="editEngineNumber">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="bi bi-card-list"></i>
+                                رقم الشاسيه
+                            </label>
+                            <input type="text" class="form-control" id="editChassisNumber">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">
+                    <i class="bi bi-x-circle"></i>
+                    إلغاء
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    حفظ التعديلات
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 
 @section Scripts {
-    <script src="~/js/Products/index.js" asp-append-version="true"></script>
+    <script src="~/js/Products/index.js"></script>
 }
