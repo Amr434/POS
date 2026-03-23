@@ -1,0 +1,390 @@
+@model POS.Models.PaginatedList<POS.Models.InventoryIndexVm>
+@using Domain.Entities
+@{
+    ViewData["Title"] = "إدارة المخزون";
+    var categories = ViewBag.Categories as IEnumerable<Category>;
+}
+
+<link rel="stylesheet" href="~/css/Inventory/index.css" />
+
+<div class="inventory-page">
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success" id="successAlert">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error" id="errorAlert">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-blue">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="statTotalProducts">@ViewBag.TotalProducts</span>
+                <span class="stat-label">إجمالي المنتجات</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-green">
+                <i class="bi bi-archive"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="statTotalStock">@ViewBag.TotalStockUnits</span>
+                <span class="stat-label">إجمالي الوحدات</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-amber">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="statLowStock">@ViewBag.LowStockCount</span>
+                <span class="stat-label">مخزون منخفض</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon stat-icon-red">
+                <i class="bi bi-x-circle"></i>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" id="statOutOfStock">@ViewBag.OutOfStockCount</span>
+                <span class="stat-label">نفذ من المخزون</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
+    <div class="search-filter-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="bi bi-funnel"></i>
+                البحث في المخزون
+            </h2>
+        </div>
+
+        <div class="filters-row">
+            <div class="filter-group">
+                <label class="filter-label">اسم المنتج أو الباركود...</label>
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" class="search-input" id="searchInput"
+                           placeholder="ابحث بالاسم أو الباركود..."
+                           value="@ViewBag.CurrentSearch">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">التصنيف</label>
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">جميع التصنيفات</option>
+                    @if (categories != null)
+                    {
+                        foreach (var category in categories)
+                        {
+                            var selected = ViewBag.CurrentCategory != null && (int)ViewBag.CurrentCategory == category.Id ? "selected" : "";
+                            <option value="@category.Id" selected="@selected">
+                                @category.Name
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">حالة المخزون</label>
+                <select class="filter-select" id="stockFilter">
+                    <option value="" selected="@(string.IsNullOrEmpty(ViewBag.CurrentStockFilter as string) ? "selected" : "")">الكل</option>
+                    <option value="low" selected="@((ViewBag.CurrentStockFilter as string) == "low" ? "selected" : "")">منخفض</option>
+                    <option value="out" selected="@((ViewBag.CurrentStockFilter as string) == "out" ? "selected" : "")">نفذ</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Table -->
+    <div class="inventory-table-card">
+        <div class="table-header">
+            <h3 class="table-title">
+                <i class="bi bi-archive"></i>
+                قائمة المخزون (<span id="totalCount">@Model.TotalCount</span> منتج)
+            </h3>
+        </div>
+
+        <div class="table-container">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>الصورة</th>
+                        <th>المنتج</th>
+                        <th>الفئة</th>
+                        <th>المخزون الحالي</th>
+                        <th>الحد الأدنى</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                    @foreach (var item in Model)
+                    {
+                        var statusText = POS.Models.InventoryIndexVm.GetStockStatusText(item.StockStatus);
+                        <tr>
+                            <td>
+                                <div class="product-image">
+                                    @if (!string.IsNullOrEmpty(item.ImagePath))
+                                    {
+                                        <img src="@item.ImagePath" alt="@item.ProductName" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-box-seam"></i>
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <div class="product-cell">
+                                    <div class="product-info">
+                                        <span class="product-name">@item.ProductName</span>
+                                        @if (!string.IsNullOrEmpty(item.Barcode))
+                                        {
+                                            <span class="product-sku">SKU: @item.Barcode</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="category-badge">@item.CategoryName</span>
+                            </td>
+                            <td>
+                                <span class="stock-value @(item.StockStatus == "out" ? "text-danger" : item.StockStatus == "low" ? "text-warning" : "text-success")">
+                                    @item.TotalStock
+                                </span>
+                            </td>
+                            <td>@item.MinStock</td>
+                            <td>
+                                <span class="stock-badge @item.StockStatus">@statusText</span>
+                            </td>
+                            <td>
+                                <div class="actions-cell">
+                                    <a href="javascript:void(0)" onclick="openDetailsModal(@item.ProductId)" class="btn-action btn-view" title="عرض الدفعات">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="javascript:void(0)" onclick="openAdjustModal(@item.ProductId)" class="btn-action btn-edit" title="تعديل المخزون">
+                                        <i class="bi bi-sliders"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (!Model.Any())
+            {
+                <div class="empty-state">
+                    <i class="bi bi-archive"></i>
+                    <h3>لا توجد منتجات في المخزون</h3>
+                    <p>قم بإتمام عملية شراء لإضافة منتجات للمخزون</p>
+                </div>
+            }
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        عرض <span id="itemsFrom">@((Model.PageIndex - 1) * 10 + 1)</span>
+                        إلى <span id="itemsTo">@Math.Min(Model.PageIndex * 10, Model.TotalCount)</span>
+                        من <span id="itemsTotal">@Model.TotalCount</span>
+                    </div>
+
+                    <button class="pagination-btn" id="prevPageBtn"
+                            onclick="goToPage(@(Model.PageIndex - 1))"
+                            @(!Model.HasPreviousPage ? "disabled" : "")>
+                        <i class="bi bi-chevron-right"></i>
+                        السابق
+                    </button>
+
+                    <div class="pagination-numbers" id="paginationNumbers">
+                        @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                        {
+                            <button class="pagination-number @(i == Model.PageIndex ? "active" : "")"
+                                    onclick="goToPage(@i)">
+                                @i
+                            </button>
+                        }
+                    </div>
+
+                    <button class="pagination-btn" id="nextPageBtn"
+                            onclick="goToPage(@(Model.PageIndex + 1))"
+                            @(!Model.HasNextPage ? "disabled" : "")>
+                        التالي
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal-content modal-details-large">
+        <div class="modal-header">
+            <h2>
+                <i class="bi bi-archive"></i>
+                تفاصيل المخزون
+            </h2>
+            <button type="button" class="btn-close-modal" onclick="closeDetailsModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="details-product-info">
+                <div class="details-product-image" id="detailsImageContainer">
+                    <img id="detailsImage" src="" alt="" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                    <div class="no-image-placeholder" id="detailsNoImage">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                </div>
+                <div class="details-product-meta">
+                    <h3 id="detailsProductName"></h3>
+                    <div class="details-meta-row">
+                        <span class="details-label">الفئة:</span>
+                        <span class="category-badge" id="detailsCategoryName"></span>
+                    </div>
+                    <div class="details-meta-row">
+                        <span class="details-label">الباركود:</span>
+                        <span id="detailsBarcode"></span>
+                    </div>
+                    <div class="details-meta-row">
+                        <span class="details-label">إجمالي المخزون:</span>
+                        <span class="stock-value-large" id="detailsTotalStock"></span>
+                    </div>
+                    <div class="details-meta-row">
+                        <span class="details-label">الحد الأدنى:</span>
+                        <span id="detailsMinStock"></span>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="batches-title">
+                <i class="bi bi-layers"></i>
+                الدفعات المتوفرة
+            </h4>
+            <div class="batches-table-container">
+                <table class="batches-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>تاريخ الشراء</th>
+                            <th>الكمية المشتراة</th>
+                            <th>الكمية المتبقية</th>
+                            <th>سعر الوحدة</th>
+                        </tr>
+                    </thead>
+                    <tbody id="batchesTableBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+                <div class="empty-batches" id="emptyBatches" style="display: none;">
+                    <i class="bi bi-inbox"></i>
+                    <p>لا توجد دفعات متوفرة لهذا المنتج</p>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDetailsModal()">
+                <i class="bi bi-x-circle"></i>
+                إغلاق
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Stock Adjustment Modal -->
+<div class="modal-overlay" id="adjustModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>
+                <i class="bi bi-sliders"></i>
+                تعديل المخزون
+            </h2>
+            <button type="button" class="btn-close-modal" onclick="closeAdjustModal()">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="modal-body" style="text-align: right;">
+            <h4 id="adjustProductName" class="adjust-product-name"></h4>
+
+            <div class="adjust-form">
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="required-star">*</span>
+                        اختر الدفعة
+                    </label>
+                    <select class="form-control" id="adjustBatchId">
+                        <option value="">اختر دفعة...</option>
+                    </select>
+                </div>
+
+                <div class="adjust-row">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            نوع التعديل
+                        </label>
+                        <select class="form-control" id="adjustType">
+                            <option value="add">إضافة كمية</option>
+                            <option value="remove">خصم كمية</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <span class="required-star">*</span>
+                            الكمية
+                        </label>
+                        <input type="number" class="form-control" id="adjustQuantity" min="1" value="1">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">السبب (اختياري)</label>
+                    <textarea class="form-control" id="adjustReason" rows="2" placeholder="مثال: تلف، إرجاع عميل..."></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeAdjustModal()">
+                <i class="bi bi-x-circle"></i>
+                إلغاء
+            </button>
+            <button type="button" class="btn btn-primary" onclick="submitAdjustment()">
+                <i class="bi bi-check-circle"></i>
+                تأكيد التعديل
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Inline notification for AJAX -->
+<div class="toast-notification" id="toastNotification" style="display: none;">
+    <i class="bi" id="toastIcon"></i>
+    <span id="toastMessage"></span>
+</div>
+
+@section Scripts {
+    <script src="~/js/Inventory/index.js"></script>
+}
