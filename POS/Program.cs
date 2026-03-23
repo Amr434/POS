@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Application.Interfaces;
 using Application.Services;
 using Infrastructure.Repositories;
@@ -26,6 +26,8 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<POS.Application.Interfaces.Repositories.ISupplierRepository, POS.Infrastructure.Repositories.SupplierRepository>();
+builder.Services.AddScoped<Application.Services.ISupplierService, Application.Services.SupplierService>();
 
 
 

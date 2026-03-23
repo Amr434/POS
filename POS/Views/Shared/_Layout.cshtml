@@ -45,7 +45,7 @@
             </div>
             <!-- المنتجات -->
             <div class="nav-item has-submenu">
-                <a class="nav-link active" data-title="المنتجات" data-page="المنتجات">
+                <a href="#" class="nav-link active" data-title="المنتجات" data-page="المنتجات">
                     <i class="bi bi-box-seam"></i>
                     <span>المنتجات</span>
 
@@ -90,6 +90,9 @@
                     <a asp-controller="Purchases" asp-action="Create" class="nav-link" data-title="المشتريات">
                         <span>فاتورة جديدة</span>
                     </a>
+                    <a asp-controller="Suppliers" asp-action="Index" class="nav-link" data-title="الموردين">
+                        <span>الموردين</span>
+                    </a>
                     <a asp-controller="Purchases" asp-action="Index" class="nav-link" data-title="سجل المشتريات">
                         <span>سجل المشتريات</span>
                     </a>
@@ -98,10 +101,9 @@
 
             <!-- المخزون -->
             <div class="nav-item">
-                <a href="#" class="nav-link" data-title="المخزون" data-page="المخزون">
+                <a asp-controller="Inventory" asp-action="Index" class="nav-link" data-title="المخزون">
                     <i class="bi bi-archive"></i>
                     <span>المخزون</span>
-                    <span class="nav-badge">12</span>
                 </a>
             </div>
 
