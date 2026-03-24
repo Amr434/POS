@@ -1,11 +1,12 @@
+using Application.Services;
+using Domain.Entities;
+using Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
 using Domain.Entities;
 using Domain.Enums;
-using POS.Models;
-using POS.Application.Services;
 
 namespace POS.Controllers
 {
@@ -13,6 +14,7 @@ namespace POS.Controllers
     {
         private readonly IProductService _productService;
         private readonly IWebHostEnvironment _environment;
+        private const int PageSize = 10; // Items per page
 
         public ProductsController(IProductService productService, IWebHostEnvironment environment)
         {
@@ -21,17 +23,71 @@ namespace POS.Controllers
         }
 
         // GET: Products
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
         {
-            var products = await _productService.GetAllAsync();
-               
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsQueryable();
 
             // Apply filters
-            IndexProductVm indexProductVm=new IndexProductVm();
-            indexProductVm.Products = products.Value;
-            indexProductVm.Categories = await _context.Categories.ToListAsync();
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                query = query.Where(p => 
+                    p.Name.Contains(searchTerm) || 
+                    p.Barcode.Contains(searchTerm));
+            }
 
-            return View(indexProductVm);
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            // Order by newest first
+            query = query.OrderByDescending(p => p.Id);
+
+            // Create paginated list
+            var paginatedProducts = await PaginatedList<Product>.CreateAsync(query, pageNumber, PageSize);
+
+            // Pass data to view
+            ViewBag.Categories = await _context.Categories.ToListAsync();
+            ViewBag.CurrentSearch = searchTerm;
+            ViewBag.CurrentCategory = categoryId;
+            ViewBag.PageNumber = pageNumber;
+
+            return View(paginatedProducts);
+        }
+
+        // GET: Products/GetPage - AJAX endpoint for pagination
+        [HttpGet]
+        public async Task<IActionResult> GetPage(int pageNumber = 1, string searchTerm = "", int? categoryId = null)
+        {
+            var products =  _context.Products
+                .Include(p => p.Category)
+                .AsQueryable();
+
+            // Apply filters
+            
+
+            var result = new
+            {
+                products = products.Select(p => new
+                {
+                    id = p.Id,
+                    name = p.Name,
+                    barcode = p.Barcode,
+                    categoryId = p.CategoryId,
+                    categoryName = p.Category.Name ?? "غير مصنف",
+                    salePrice = p.SalePrice,
+                    minStock = p.MinStock,
+                    status = p.Status.ToString(),
+                    imagePath = p.ImagePath,
+                    engineNumber = p.EngineNumber,
+                    chassisNumber = p.ChassisNumber
+                }),
+          
+            };
+
+            return Ok(result);
         }
 
         // GET: Products/GetDetails/5 - For Preview Modal
@@ -160,7 +216,6 @@ namespace POS.Controllers
                 Categories = await GetCategoriesSelectList(),
                 Status = ProductStatus.New,  // Auto-default to "New"
                 MinStock =1,                 // Smart default
-             
                 SalePrice = 0
             };
 
@@ -176,11 +231,6 @@ namespace POS.Controllers
             {
                 try
                 {
-                    // Smart default for MinStock if not provided
-                    if (model.MinStock == 0)
-                    {
-                        model.MinStock = 5;
-                    }
 
                     var product = new Product
                     {

@@ -1,0 +1,553 @@
+@using Domain.Entities
+@model IEnumerable<Supplier>
+
+@{
+    ViewData["Title"] = "إدارة الموردين";
+}
+
+<style>
+    * { font-family: 'Tajawal', sans-serif; }
+
+    .suppliers-container {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .page-header {
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+        border-radius: 16px;
+        padding: 28px;
+        margin-bottom: 24px;
+        color: white;
+        box-shadow: 0 8px 24px rgba(30, 58, 138, 0.3);
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .header-title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+    }
+
+    .header-subtitle {
+        margin: 8px 0 0 0;
+        opacity: 0.95;
+        font-size: 14px;
+    }
+
+    .btn-add-supplier {
+        padding: 12px 22px;
+        background: white;
+        color: #1e3a8a;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-add-supplier:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .table-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #f9fafb;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .table-title {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        padding: 14px 20px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 700;
+        color: #6b7280;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    tbody td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f3f4f6;
+        color: #111827;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+    }
+
+    .btn-edit {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .btn-edit:hover {
+        background: #1e3a8a;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-delete:hover {
+        background: #dc2626;
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6b7280;
+    }
+
+    .empty-state i { font-size: 64px; color: #d1d5db; margin-bottom: 16px; display: inline-block; }
+    .empty-state h3 { font-size: 20px; color: #374151; margin-bottom: 8px; }
+    .empty-state p { font-size: 14px; margin-bottom: 18px; }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        padding: 20px;
+        color: white;
+        border-radius: 16px 16px 0 0;
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .modal-body { padding: 20px; }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 800;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .required-star { color: #dc2626; margin-left: 4px; }
+
+    .form-control, .form-textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .form-textarea { min-height: 90px; resize: vertical; }
+
+    .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 12px 18px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #e5e7eb;
+    }
+
+    .alert {
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+    }
+
+    .alert-success { background: rgba(16, 185, 129, 0.12); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+</style>
+
+<div class="suppliers-container">
+    <div id="alertContainer"></div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-error">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
+    }
+
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1 class="header-title">إدارة الموردين</h1>
+                <p class="header-subtitle">إضافة وتعديل وحذف بيانات الموردين</p>
+            </div>
+
+            <button class="btn-add-supplier" onclick="openModal('add')">
+                <i class="bi bi-plus-circle-fill"></i>
+                إضافة مورد جديد
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-header">
+            <h2 class="table-title">
+                <i class="bi bi-list-ul"></i>
+                قائمة الموردين
+            </h2>
+        </div>
+
+        @if (Model != null && Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>المورد</th>
+                        <th>الهاتف</th>
+                        <th>العنوان</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var supplier in Model)
+                    {
+                        <tr data-id="@supplier.Id"
+                            data-name="@supplier.Name"
+                            data-phone="@supplier.Phone"
+                            data-address="@supplier.Address">
+                            <td>@supplier.Name</td>
+                            <td>@(string.IsNullOrWhiteSpace(supplier.Phone) ? "-" : supplier.Phone)</td>
+                            <td>@(string.IsNullOrWhiteSpace(supplier.Address) ? "-" : supplier.Address)</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-edit" onclick="editSupplierRow(this)" title="تعديل">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn-action btn-delete" onclick="openDeleteModalRow(this)" title="حذف">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="empty-state">
+                <i class="bi bi-inbox"></i>
+                <h3>لا توجد موردين</h3>
+                <p>ابدأ بإضافة موردين لتسهيل إدخال المشتريات.</p>
+                <button class="btn btn-primary" onclick="openModal('add')">
+                    <i class="bi bi-plus-circle"></i>
+                    إضافة أول مورد
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add/Edit Supplier Modal -->
+<div class="modal-overlay" id="supplierModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="supplierModalTitle">إضافة مورد جديد</h2>
+        </div>
+
+        <form id="supplierForm">
+            <div class="modal-body">
+                <input type="hidden" id="supplierId" />
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="required-star">*</span>
+                        اسم المورد
+                    </label>
+                    <input class="form-control" id="supplierName" required />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">الهاتف</label>
+                    <input class="form-control" id="supplierPhone" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">العنوان</label>
+                    <textarea class="form-textarea" id="supplierAddress"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                    <i class="bi bi-x-circle"></i>
+                    إلغاء
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    حفظ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content" style="max-width: 420px;">
+        <div class="modal-header" style="background: linear-gradient(180deg, #dc2626 0%, #b91c1c 100%);">
+            <h2>تأكيد الحذف</h2>
+        </div>
+
+        <div class="modal-body">
+            <p style="text-align:center; color:#374151; font-size:15px; margin:0 0 10px 0;">
+                هل أنت متأكد من حذف هذا المورد؟
+            </p>
+            <strong id="deleteSupplierName" style="display:block; text-align:center; color:#1e3a8a;"></strong>
+            <input type="hidden" id="deleteSupplierId" />
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                <i class="bi bi-x-circle"></i>
+                إلغاء
+            </button>
+            <button type="button" class="btn" onclick="confirmDelete()" style="background:#dc2626; color:white;">
+                <i class="bi bi-trash"></i>
+                حذف
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showAlert(message, type = 'success') {
+        const alertContainer = document.getElementById('alertContainer');
+        const alert = document.createElement('div');
+        alert.className = `alert ${type === 'success' ? 'alert-success' : 'alert-error'}`;
+        alert.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle-fill' : 'exclamation-triangle-fill'}"></i>
+            <span>${message}</span>
+        `;
+        alertContainer.appendChild(alert);
+        setTimeout(() => alert.remove(), 5000);
+    }
+
+    function openModal(mode) {
+        const modal = document.getElementById('supplierModal');
+        const title = document.getElementById('supplierModalTitle');
+        const form = document.getElementById('supplierForm');
+
+        form.reset();
+
+        if (mode === 'add') {
+            title.textContent = 'إضافة مورد جديد';
+            document.getElementById('supplierId').value = '';
+            document.getElementById('supplierName').value = '';
+            document.getElementById('supplierPhone').value = '';
+            document.getElementById('supplierAddress').value = '';
+        }
+
+        modal.classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('supplierModal').classList.remove('show');
+    }
+
+    function editSupplierRow(button) {
+        const row = button.closest('tr');
+        const modal = document.getElementById('supplierModal');
+        const title = document.getElementById('supplierModalTitle');
+
+        document.getElementById('supplierId').value = row.dataset.id;
+        document.getElementById('supplierName').value = row.dataset.name ?? '';
+        document.getElementById('supplierPhone').value = row.dataset.phone ?? '';
+        document.getElementById('supplierAddress').value = row.dataset.address ?? '';
+
+        title.textContent = 'تعديل المورد';
+        modal.classList.add('show');
+    }
+
+    function openDeleteModalRow(button) {
+        const row = button.closest('tr');
+        document.getElementById('deleteSupplierId').value = row.dataset.id;
+        document.getElementById('deleteSupplierName').textContent = row.dataset.name ?? '';
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+
+    document.getElementById('supplierForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const id = document.getElementById('supplierId').value;
+        const name = document.getElementById('supplierName').value;
+        const phone = document.getElementById('supplierPhone').value;
+        const address = document.getElementById('supplierAddress').value;
+
+        const url = id ? '/Suppliers/Update' : '/Suppliers/Create';
+        const payload = id
+            ? { id: parseInt(id), name: name, phone: phone, address: address }
+            : { name: name, phone: phone, address: address };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showAlert(result.message || 'تم الحفظ بنجاح', 'success');
+                closeModal();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(result.error || 'حدث خطأ أثناء الحفظ', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('حدث خطأ أثناء حفظ المورد', 'error');
+        }
+    });
+
+    async function confirmDelete() {
+        const id = parseInt(document.getElementById('deleteSupplierId').value);
+
+        try {
+            const response = await fetch(`/Suppliers/Delete?id=${id}`, { method: 'POST' });
+            const result = await response.json();
+
+            if (response.ok) {
+                showAlert(result.message || 'تم الحذف بنجاح', 'success');
+                closeDeleteModal();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert(result.error || 'حدث خطأ أثناء الحذف', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showAlert('حدث خطأ أثناء حذف المورد', 'error');
+        }
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function (e) {
+            if (e.target === this) this.classList.remove('show');
+        });
+    });
+</script>
+

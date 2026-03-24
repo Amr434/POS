@@ -1,0 +1,117 @@
+@using Domain.Enums
+@model IEnumerable<Domain.Entities.Purchase>
+
+@{
+    ViewBag.Title = "قائمة المشتريات";
+}
+
+<link rel="stylesheet" href="~/css/Purchases/index.css" asp-append-version="true" />
+
+<h2>قائمة المشتريات</h2>
+<a href="@Url.Action("Create", "Purchases")" class="btn btn-success">إضافة شراء جديد</a>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>المورد</th>
+            <th>تاريخ الشراء</th>
+            <th>الإجمالي</th>
+            <th>الحالة</th>
+            <th>العمليات</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var purchase in Model)
+        {
+            <tr>
+                <td>@(purchase.Supplier?.Name ?? "-")</td>
+                <td>@purchase.PurchaseDate.ToString("yyyy-MM-dd")</td>
+                <td>@purchase.TotalAmount.ToString("N2")</td>
+                <td>@(purchase.Status == PurchaseStatus.Completed ? "مكتمل" : "قيد الانتظار")</td>
+                <td>
+                    @if (purchase.Status == PurchaseStatus.Draft)
+                    {
+                        <a href="@Url.Action("Edit", "Purchases", new { id = purchase.Id })" class="btn btn-sm btn-primary">تعديل</a>
+                        <button onclick="openDeleteModal(@purchase.Id)" class="btn-action btn-delete" title="حذف">
+                            <i class="bi bi-trash"></i>
+                        </button>
+
+                    }else{
+                        <a href="@Url.Action("Receipt", "Purchases", new { id = purchase.Id })" class="btn btn-sm btn-success">عرض الإيصال</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>تأكيد الحذف</h2>
+        </div>
+        <div class="modal-body">
+            <p>
+                هل أنت متأكد من حذف هذه الفاتورة؟<br>
+                <strong id="deletePurchaseName"></strong>
+            </p>
+            <input type="hidden" id="deletePurchaseId">
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">
+                <i class="bi bi-x-circle"></i>
+                إلغاء
+            </button>
+            <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                <i class="bi bi-trash"></i>
+                حذف
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+    // Open delete modal
+    function openDeleteModal(id, name) {
+        document.getElementById('deletePurchaseId').value = id;
+        document.getElementById('deletePurchaseName').textContent = name;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    // Close delete modal
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+
+    // Confirm delete
+    async function confirmDelete() {
+        const id = parseInt(document.getElementById('deletePurchaseId').value);
+
+     try {
+            const response = await fetch(`/Purchases/Delete/${id}`, { method: 'POST' });
+
+            if (response.ok) {
+                closeDeleteModal();
+                location.reload();
+            } 
+            else {
+                alert('حدث خطأ أثناء حذف المنتج');
+            }
+        } 
+        catch (error) {
+            alert('حدث خطأ في الاتصال');
+        }
+    }
+
+    // Close modal on overlay click
+    document.getElementById('deleteModal')?.addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeDeleteModal();
+        }
+    });
+
+    </script>
+}
