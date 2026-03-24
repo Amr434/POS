@@ -301,3 +301,4 @@ FodyWeavers.xsd
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,dotnetcore
+/POS/wwwroot/images/products
