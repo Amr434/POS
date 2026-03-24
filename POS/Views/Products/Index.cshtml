@@ -1,4 +1,4 @@
-@model POS.Models.PaginatedList<Domain.Entities.Product>
+@model POS.Models.IndexProductVm;
 @using Domain.Entities
 @{
     ViewData["Title"] = "إدارة المنتجات";
@@ -149,57 +149,6 @@
             </table>
 
             <!-- Pagination -->
-            @if (Model.TotalPages > 1)
-            {
-                <div class="pagination-container">
-                    <div class="pagination-info">
-                        عرض <span id="itemsFrom">@((Model.PageIndex - 1) * 10 + 1)</span>
-                        إلى <span id="itemsTo">@Math.Min(Model.PageIndex * 10, Model.TotalCount)</span>
-                        من <span id="itemsTotal">@Model.TotalCount</span>
-                    </div>
-    
-                    <button class="pagination-btn" id="prevPageBtn" 
-                            onclick="goToPage(@(Model.PageIndex - 1))" 
-                            @(!Model.HasPreviousPage ? "disabled" : "")>
-                        <i class="bi bi-chevron-right"></i>
-                        السابق
-                    </button>
-
-                    <div class="pagination-numbers" id="paginationNumbers">
-                        @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
-                        {
-                            <button class="pagination-number @(i == Model.PageIndex ? "active" : "")" 
-                                    onclick="goToPage(@i)">
-                                @i
-                            </button>
-                        }
-                    </div>
-
-                    <button class="pagination-btn" id="nextPageBtn" 
-                            onclick="goToPage(@(Model.PageIndex + 1))" 
-                            @(!Model.HasNextPage ? "disabled" : "")>
-                        التالي
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-
-                    <button class="pagination-btn" id="lastPageBtn" 
-                            onclick="goToPage(@Model.TotalPages)" 
-                            @(!Model.HasNextPage ? "disabled" : "")>
-                        <i class="bi bi-chevron-double-left"></i>
-                    </button>
-                </div>
-
-                <div class="pagination-page-size">
-                    <label>عرض:</label>
-                    <select id="pageSizeSelect" onchange="changePageSize(this.value)">
-                        <option value="10" selected>10</option>
-                        <option value="25">25</option>
-                        <option value="50">50</option>
-                        <option value="100">100</option>
-                    </select>
-                </div>
-            }
-        </div>
     </div>
 </div>
 

@@ -4,50 +4,34 @@ using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
 using Domain.Entities;
 using Domain.Enums;
+using POS.Models;
+using POS.Application.Services;
 
 namespace POS.Controllers
 {
     public class ProductsController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly IProductService _productService;
         private readonly IWebHostEnvironment _environment;
 
-        public ProductsController(AppDbContext context, IWebHostEnvironment environment)
+        public ProductsController(IProductService productService, IWebHostEnvironment environment)
         {
-            _context = context;
+            _productService = productService;
             _environment = environment;
         }
 
         // GET: Products
         public async Task<IActionResult> Index()
         {
-            var products =  _context.Products
-                .Include(p => p.Category)
-                .AsQueryable();
+            var products = await _productService.GetAllAsync();
+               
 
             // Apply filters
-            
+            IndexProductVm indexProductVm=new IndexProductVm();
+            indexProductVm.Products = products.Value;
+            indexProductVm.Categories = await _context.Categories.ToListAsync();
 
-            var result = new
-            {
-                products = products.Select(p => new
-                {
-                    id = p.Id,
-                    name = p.Name,
-                    barcode = p.Barcode,
-                    categoryId = p.CategoryId,
-                    categoryName = p.Category.Name ?? "غير مصنف",
-                    salePrice = p.SalePrice,
-                    minStock = p.MinStock,
-                    status = p.Status.ToString(),
-                    imagePath = p.ImagePath,
-                    engineNumber = p.EngineNumber,
-                    chassisNumber = p.ChassisNumber
-                }),
-          
-            };
-
-            return Ok(result);
+            return View(indexProductVm);
         }
 
         // GET: Products/GetDetails/5 - For Preview Modal
