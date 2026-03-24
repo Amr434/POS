@@ -405,3 +405,28 @@ document.getElementById('editModal')?.addEventListener('click', function (e) {
         closeEditModal();
     }
 });
+
+
+    function changePageSize(pageSize) {
+            const currentSearch = '@ViewBag.CurrentSearch' || '';
+    const currentCategory = '@ViewBag.CurrentCategory' || '';
+    window.location.href = `/Products/Index?pageSize=${pageSize}&searchTerm=${currentSearch}&categoryId=${currentCategory}`;
+        }
+
+    // Update filters to include pagination
+    document.getElementById('searchInput')?.addEventListener('input', function(e) {
+            const search = e.target.value;
+    const category = document.getElementById('categoryFilter').value;
+    applyFiltersWithPagination(search, category);
+        });
+
+    document.getElementById('categoryFilter')?.addEventListener('change', function(e) {
+            const search = document.getElementById('searchInput').value;
+    const category = e.target.value;
+    applyFiltersWithPagination(search, category);
+        });
+
+    function applyFiltersWithPagination(search, category) {
+            const pageSize = document.getElementById('pageSizeSelect')?.value || 20;
+    window.location.href = `/Products/Index?searchTerm=${search}&categoryId=${category}&pageSize=${pageSize}&pageNumber=1`;
+        }

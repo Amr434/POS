@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using POS.Infrastructure.Data;
 using Domain.Entities;
 using Domain.Enums;
+using POS.Application.Services;
+using POS.Models;
 
 namespace POS.Controllers
 {
@@ -14,12 +16,14 @@ namespace POS.Controllers
     {
         private readonly IProductService _productService;
         private readonly IWebHostEnvironment _environment;
+        private readonly AppDbContext _context;
         private const int PageSize = 10; // Items per page
 
-        public ProductsController(IProductService productService, IWebHostEnvironment environment)
+        public ProductsController(AppDbContext context,IProductService productService, IWebHostEnvironment environment)
         {
             _productService = productService;
             _environment = environment;
+            _context= context;  
         }
 
         // GET: Products
