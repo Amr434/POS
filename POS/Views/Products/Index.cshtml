@@ -275,6 +275,180 @@
         }
     </div>
 </div>
+
+<!-- Preview Modal -->
+<div id="previewModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>تفاصيل المنتج</h3>
+            <button type="button" class="close-btn" onclick="closePreviewModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="preview-container">
+                <div id="previewImageContainer" class="preview-image-section">
+                    <img id="previewImage" alt="Product Image" />
+                </div>
+                <div class="preview-details">
+                    <div class="detail-row">
+                        <label>اسم المنتج:</label>
+                        <span id="previewName"></span>
+                    </div>
+                    <div class="detail-row">
+                        <label>الفئة:</label>
+                        <span id="previewCategory"></span>
+                    </div>
+                    <div class="detail-row">
+                        <label>سعر البيع:</label>
+                        <span id="previewSalePrice"></span>
+                    </div>
+                    <div class="detail-row">
+                        <label>الباركود:</label>
+                        <span id="previewBarcode"></span>
+                    </div>
+                    <div class="detail-row">
+                        <label>الحالة:</label>
+                        <span id="previewStatus"></span>
+                    </div>
+                    <div id="previewEngineContainer" class="detail-row" style="display: none;">
+                        <label>رقم المحرك:</label>
+                        <span id="previewEngine"></span>
+                    </div>
+                    <div id="previewChassisContainer" class="detail-row" style="display: none;">
+                        <label>رقم الشاسيه:</label>
+                        <span id="previewChassis"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content modal-lg">
+        <div class="modal-header">
+            <h3>تعديل المنتج</h3>
+            <button type="button" class="close-btn" onclick="closeEditModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="editProductForm" enctype="multipart/form-data">
+                <input type="hidden" id="editProductId" name="id" />
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editName">اسم المنتج</label>
+                        <input type="text" id="editName" name="name" class="form-control" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editCategoryId">الفئة</label>
+                        <select id="editCategoryId" name="categoryId" class="form-control">
+                            <option value="">اختر الفئة</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editSalePrice">سعر البيع</label>
+                        <input type="number" id="editSalePrice" name="salePrice" class="form-control" step="0.01" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editMinStock">الحد الأدنى</label>
+                        <input type="number" id="editMinStock" name="minStock" class="form-control" value="5" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editBarcode">الباركود</label>
+                        <input type="text" id="editBarcode" name="barcode" class="form-control" />
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="editStatus">الحالة</label>
+                        <select id="editStatus" name="status" class="form-control">
+                            <option value="0">جديد</option>
+                            <option value="1">محجوز</option>
+                            <option value="2">مُباع</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editImageFile">صورة المنتج</label>
+                    <div class="image-upload-container">
+                        <div class="current-image-preview">
+                            <img id="editCurrentImage" style="display: none; max-width: 200px; max-height: 200px; border-radius: 8px;" />
+                            <div id="editNoImage" style="display: flex; align-items: center; justify-content: center; width: 200px; height: 200px; background: #f0f0f0; border-radius: 8px;">
+                                <i class="bi bi-image" style="font-size: 48px; color: #ccc;"></i>
+                            </div>
+                        </div>
+                        <input type="file" id="editImageFile" name="image" class="form-control" accept="image/*" onchange="previewEditImage(event)" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="editIsMotorcycle" onchange="toggleMotorcycleFieldsEdit()" />
+                        <span>منتج دراجة نارية</span>
+                    </label>
+                </div>
+
+                <div id="editMotorcycleFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editEngineNumber">رقم المحرك</label>
+                            <input type="text" id="editEngineNumber" name="engineNumber" class="form-control" />
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="editChassisNumber">رقم الشاسيه</label>
+                            <input type="text" id="editChassisNumber" name="chassisNumber" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="closeEditModal()">إلغاء</button>
+                    <button type="submit" class="btn-primary">حفظ التعديلات</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3>تأكيد الحذف</h3>
+            <button type="button" class="close-btn" onclick="closeDeleteModal()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="deleteProductId" />
+            <div class="delete-confirm-message">
+                <i class="bi bi-exclamation-triangle" style="font-size: 48px; color: #dc3545;"></i>
+                <p>هل أنت متأكد من حذف المنتج:</p>
+                <strong id="deleteProductName"></strong>
+                <p class="warning-text">لا يمكن التراجع عن هذا الإجراء</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-secondary" onclick="closeDeleteModal()">إلغاء</button>
+            <button type="button" class="btn-danger" onclick="confirmDelete()">حذف</button>
+        </div>
+    </div>
+</div>
+
+
 @section Scripts {
     <script src="~/js/Products/index.js"></script>
 }

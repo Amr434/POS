@@ -167,7 +167,6 @@ namespace POS.Controllers
             product.Name = dto.Name;
             product.CategoryId = dto.CategoryId;
             product.SalePrice = dto.SalePrice;
-            product.MinStock = dto.MinStock;
             product.Barcode = dto.Barcode;
             product.Status = dto.Status;
 
