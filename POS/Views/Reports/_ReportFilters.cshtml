@@ -1,0 +1,35 @@
+@model POS.Models.Reports.ReportFiltersVm
+
+<form method="get" class="row g-2 align-items-end no-print">
+    <div class="col-lg-3 col-md-4">
+        <label class="form-label mb-1">من</label>
+        <input type="date" class="form-control form-control-sm" name="from" value="@Model.From.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-lg-3 col-md-4">
+        <label class="form-label mb-1">إلى</label>
+        <input type="date" class="form-control form-control-sm" name="to" value="@Model.To.ToString("yyyy-MM-dd")" />
+    </div>
+    <div class="col-lg-3 col-md-4">
+        <label class="form-label mb-1">التجميع</label>
+        <select class="form-select form-select-sm" name="groupBy">
+            <option value="day" selected="@(Model.GroupBy == "day")">يومي</option>
+            <option value="month" selected="@(Model.GroupBy == "month")">شهري</option>
+        </select>
+    </div>
+    <div class="col-lg-3 col-md-12 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary flex-grow-1">تطبيق</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()">طباعة</button>
+    </div>
+</form>
+
+<div class="mt-2 no-print" style="color: var(--text-muted); font-size: 12px;">
+    تلميح: يمكنك استخدام أزرار المتصفح للرجوع/التقدم بعد تطبيق الفلاتر.
+</div>
+
+<style>
+    @@media print {
+        .no-print { display: none !important; }
+        .table { font-size: 12px; }
+    }
+</style>
+

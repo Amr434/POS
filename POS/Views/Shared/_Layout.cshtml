@@ -38,7 +38,7 @@
         <nav class="sidebar-nav">
             <!-- الرئيسية -->
             <div class="nav-item">
-                <a asp-controller="Home" asp-action="Index" class="nav-link" data-title="الرئيسية" data-page="الرئيسية">
+                <a asp-controller="Home" asp-action="Index" class="nav-link" data-title="الرئيسية" >
                     <i class="bi bi-house-door"></i>
                     <span>الرئيسية</span>
                 </a>
@@ -120,7 +120,6 @@
                 <a href="#" class="nav-link" data-title="الأقساط" data-page="الأقساط">
                     <i class="bi bi-credit-card"></i>
                     <span>الأقساط</span>
-                    <span class="nav-badge">3</span>
                 </a>
             </div>
 
@@ -129,7 +128,6 @@
                 <a href="#" class="nav-link" data-title="التنبيهات" data-page="التنبيهات">
                     <i class="bi bi-bell"></i>
                     <span>التنبيهات</span>
-                    <span class="nav-badge">5</span>
                 </a>
             </div>
 
@@ -140,14 +138,17 @@
                     <span>التقارير</span>
                 </a>
                 <div class="submenu">
-                    <a href="#" class="nav-link" data-title="تقرير المبيعات">
+                    <a asp-controller="Reports" asp-action="Sales" class="nav-link" data-title="تقرير المبيعات">
                         <span>تقرير المبيعات</span>
                     </a>
-                    <a href="#" class="nav-link" data-title="تقرير المخزون">
+                    <a asp-controller="Reports" asp-action="Inventory" class="nav-link" data-title="تقرير المخزون">
                         <span>تقرير المخزون</span>
                     </a>
-                    <a href="#" class="nav-link" data-title="تقرير الأرباح">
+                    <a asp-controller="Reports" asp-action="Profit" class="nav-link" data-title="تقرير الأرباح">
                         <span>تقرير الأرباح</span>
+                    </a>
+                    <a asp-controller="Reports" asp-action="Expenses" class="nav-link" data-title="تقرير المصروفات">
+                        <span>تقرير المصروفات</span>
                     </a>
                 </div>
             </div>

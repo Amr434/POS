@@ -1,6 +1,7 @@
-﻿@{
+@{
     ViewData["Title"] = "الرئيسية";
 }
+@model POS.Models.HomeDashboardVm
 
 <!-- Page Header -->
 <div class="page-header-section">
@@ -13,7 +14,7 @@
             <p class="page-subtitle">مرحباً بك في نظام إدارة نقاط البيع</p>
         </div>
         <div>
-            <span class="text-secondary">اليوم: @DateTime.Now.ToString("dd/MM/yyyy")</span>
+            <span class="text-secondary">اليوم: @Model.Today.ToString("dd/MM/yyyy")</span>
         </div>
     </div>
 </div>
@@ -26,7 +27,7 @@
                 <i class="bi bi-cash-stack"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value">12,450 ر.س</div>
+                <div class="stat-value">@Model.TodaySalesTotal.ToString("N0") ر.س</div>
                 <div class="stat-label">مبيعات اليوم</div>
             </div>
         </div>
@@ -38,7 +39,7 @@
                 <i class="bi bi-box-seam"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value">1,234</div>
+                <div class="stat-value">@Model.TotalProducts.ToString("N0")</div>
                 <div class="stat-label">إجمالي المنتجات</div>
             </div>
         </div>
@@ -50,7 +51,7 @@
                 <i class="bi bi-exclamation-triangle"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value">12</div>
+                <div class="stat-value">@Model.LowStockCount.ToString("N0")</div>
                 <div class="stat-label">تنبيهات المخزون</div>
             </div>
         </div>
@@ -62,7 +63,7 @@
                 <i class="bi bi-receipt"></i>
             </div>
             <div class="stat-info">
-                <div class="stat-value">45</div>
+                <div class="stat-value">@Model.TodayInvoicesCount.ToString("N0")</div>
                 <div class="stat-label">فواتير اليوم</div>
             </div>
         </div>
@@ -95,7 +96,7 @@
                     </a>
                 </div>
                 <div class="col-lg-3 col-md-6">
-                    <a href="#" class="quick-action-card">
+                    <a asp-controller="Reports" asp-action="Index" class="quick-action-card">
                         <div class="quick-action-icon" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
                             <i class="bi bi-file-earmark-text"></i>
                         </div>
@@ -141,27 +142,35 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>#INV-001</td>
-                            <td>@DateTime.Now.ToString("HH:mm")</td>
-                            <td>أحمد محمد</td>
-                            <td>450 ر.س</td>
-                            <td><span class="badge-new">مكتمل</span></td>
-                        </tr>
-                        <tr>
-                            <td>#INV-002</td>
-                            <td>@DateTime.Now.AddMinutes(-15).ToString("HH:mm")</td>
-                            <td>سارة أحمد</td>
-                            <td>320 ر.س</td>
-                            <td><span class="badge-new">مكتمل</span></td>
-                        </tr>
-                        <tr>
-                            <td>#INV-003</td>
-                            <td>@DateTime.Now.AddMinutes(-30).ToString("HH:mm")</td>
-                            <td>محمد علي</td>
-                            <td>680 ر.س</td>
-                            <td><span class="badge-reserved">معلق</span></td>
-                        </tr>
+                        @if (Model.RecentSales == null || Model.RecentSales.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-secondary py-4">لا توجد مبيعات حتى الآن</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            foreach (var s in Model.RecentSales)
+                            {
+                                var isCompleted = s.RemainingAmount <= 0;
+                                <tr>
+                                    <td>#INV-@s.SaleId.ToString("D4")</td>
+                                    <td>@s.SaleDate.ToString("HH:mm")</td>
+                                    <td>@s.CustomerName</td>
+                                    <td>@s.TotalAmount.ToString("N0") ر.س</td>
+                                    <td>
+                                        @if (isCompleted)
+                                        {
+                                            <span class="badge-new">مكتمل</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge-reserved">معلق</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
                     </tbody>
                 </table>
             </div>
@@ -176,42 +185,36 @@
                 تنبيهات المخزون
             </h3>
             <div class="d-flex flex-column gap-3">
-                <div class="alert-item">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="alert-icon">
-                            <i class="bi bi-box-seam"></i>
+                @if (Model.LowStockItems == null || Model.LowStockItems.Count == 0)
+                {
+                    <div class="text-secondary text-center py-3">لا توجد تنبيهات مخزون</div>
+                }
+                else
+                {
+                    foreach (var p in Model.LowStockItems)
+                    {
+                        var isOut = p.RemainingQuantity <= 0;
+                        <div class="alert-item">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="alert-icon">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">@p.ProductName</div>
+                                    <div style="color: var(--text-muted); font-size: 12px;">الكمية: @p.RemainingQuantity فقط</div>
+                                </div>
+                                @if (isOut)
+                                {
+                                    <span class="badge-sold">نفذ</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-low">منخفض</span>
+                                }
+                            </div>
                         </div>
-                        <div class="flex-grow-1">
-                            <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">منتج A</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">الكمية: 5 فقط</div>
-                        </div>
-                        <span class="badge-low">منخفض</span>
-                    </div>
-                </div>
-                <div class="alert-item">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="alert-icon">
-                            <i class="bi bi-box-seam"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">منتج B</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">الكمية: 3 فقط</div>
-                        </div>
-                        <span class="badge-low">منخفض</span>
-                    </div>
-                </div>
-                <div class="alert-item">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="alert-icon">
-                            <i class="bi bi-box-seam"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <div style="color: var(--text-primary); font-weight: 500; font-size: 14px;">منتج C</div>
-                            <div style="color: var(--text-muted); font-size: 12px;">الكمية: 2 فقط</div>
-                        </div>
-                        <span class="badge-sold">نفذ</span>
-                    </div>
-                </div>
+                    }
+                }
             </div>
         </div>
     </div>
