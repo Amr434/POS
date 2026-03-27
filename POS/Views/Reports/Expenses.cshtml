@@ -1,0 +1,108 @@
+@model POS.Models.Reports.ExpensesReportVm
+@{
+    ViewData["Title"] = "تقرير المصروفات";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-1" style="color: var(--text-primary); font-size: 20px; font-weight: 700;">
+            <i class="bi bi-receipt ms-2"></i>
+            تقرير المصروفات
+        </h2>
+        <div style="color: var(--text-muted); font-size: 13px;">
+            الفترة: @Model.From.ToString("yyyy-MM-dd") إلى @Model.To.ToString("yyyy-MM-dd")
+        </div>
+    </div>
+    <div class="no-print d-flex gap-2">
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">كل التقارير</a>
+        <a asp-action="ExpensesCsv"
+           asp-route-from="@Model.From.ToString("yyyy-MM-dd")"
+           asp-route-to="@Model.To.ToString("yyyy-MM-dd")"
+           asp-route-groupBy="@Model.GroupBy"
+           class="btn btn-sm btn-outline-primary">
+            تصدير CSV
+        </a>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ReportFilters", new POS.Models.Reports.ReportFiltersVm { From = Model.From, To = Model.To, GroupBy = Model.GroupBy })
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-4 col-md-6">
+        <div class="content-card">
+            <div style="color: var(--text-muted); font-size: 12px;">إجمالي المصروفات</div>
+            <div style="color: var(--text-primary); font-weight: 800; font-size: 22px;">@Model.TotalAmount</div>
+        </div>
+    </div>
+</div>
+
+<div class="content-card mt-3">
+    <h3 class="mb-2" style="color: var(--text-primary); font-size: 16px; font-weight: 700;">
+        ملخص حسب @(Model.GroupBy == "month" ? "الشهر" : "اليوم")
+    </h3>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>الفترة</th>
+                    <th class="text-nowrap">عدد العمليات</th>
+                    <th class="text-nowrap">الإجمالي</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Groups.Count == 0)
+                {
+                    <tr><td colspan="3" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
+                }
+                else
+                {
+                    foreach (var g in Model.Groups)
+                    {
+                        <tr>
+                            <td>@(Model.GroupBy == "month" ? g.Period.ToString("yyyy-MM") : g.Period.ToString("yyyy-MM-dd"))</td>
+                            <td>@g.Count</td>
+                            <td>@g.TotalAmount</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="content-card mt-3">
+    <h3 class="mb-2" style="color: var(--text-primary); font-size: 16px; font-weight: 700;">تفاصيل المصروفات</h3>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>التاريخ</th>
+                    <th>العنوان</th>
+                    <th class="text-nowrap">المبلغ</th>
+                    <th>ملاحظات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            <td>@r.Id</td>
+                            <td>@r.ExpenseDate.ToString("yyyy-MM-dd")</td>
+                            <td>@r.Title</td>
+                            <td>@r.Amount</td>
+                            <td>@(string.IsNullOrWhiteSpace(r.Notes) ? "—" : r.Notes)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+

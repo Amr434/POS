@@ -1,0 +1,130 @@
+@model POS.Models.Reports.InventoryReportVm
+@{
+    ViewData["Title"] = "تقرير المخزون";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h2 class="mb-1" style="color: var(--text-primary); font-size: 20px; font-weight: 700;">
+            <i class="bi bi-box-seam ms-2"></i>
+            تقرير المخزون
+        </h2>
+        <div style="color: var(--text-muted); font-size: 13px;">
+            رصيد المخزون الحالي + مشتريات الفترة: @Model.From.ToString("yyyy-MM-dd") إلى @Model.To.ToString("yyyy-MM-dd")
+        </div>
+    </div>
+    <div class="no-print d-flex gap-2">
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">كل التقارير</a>
+        <a asp-action="InventoryCsv" class="btn btn-sm btn-outline-primary">تصدير CSV</a>
+    </div>
+</div>
+
+@await Html.PartialAsync("_ReportFilters", new POS.Models.Reports.ReportFiltersVm { From = Model.From, To = Model.To, GroupBy = Model.GroupBy })
+
+<div class="row g-3 mt-1">
+    <div class="col-lg-3 col-md-6">
+        <div class="content-card">
+            <div style="color: var(--text-muted); font-size: 12px;">عدد المنتجات</div>
+            <div style="color: var(--text-primary); font-weight: 800; font-size: 22px;">@Model.TotalProducts</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="content-card">
+            <div style="color: var(--text-muted); font-size: 12px;">إجمالي وحدات المخزون</div>
+            <div style="color: var(--text-primary); font-weight: 800; font-size: 22px;">@Model.TotalStockUnits</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="content-card">
+            <div style="color: var(--text-muted); font-size: 12px;">منخفض</div>
+            <div style="color: var(--text-primary); font-weight: 800; font-size: 22px;">@Model.LowStockCount</div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="content-card">
+            <div style="color: var(--text-muted); font-size: 12px;">منتهي</div>
+            <div style="color: var(--text-primary); font-weight: 800; font-size: 22px;">@Model.OutOfStockCount</div>
+        </div>
+    </div>
+</div>
+
+<div class="content-card mt-3">
+    <h3 class="mb-2" style="color: var(--text-primary); font-size: 16px; font-weight: 700;">
+        مشتريات الفترة حسب @(Model.GroupBy == "month" ? "الشهر" : "اليوم")
+    </h3>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>الفترة</th>
+                    <th class="text-nowrap">وحدات مشتراة</th>
+                    <th class="text-nowrap">قيمة مشتراة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.PurchaseGroups.Count == 0)
+                {
+                    <tr><td colspan="3" class="text-center text-muted py-4">لا توجد مشتريات ضمن الفترة</td></tr>
+                }
+                else
+                {
+                    foreach (var g in Model.PurchaseGroups)
+                    {
+                        <tr>
+                            <td>@(Model.GroupBy == "month" ? g.Period.ToString("yyyy-MM") : g.Period.ToString("yyyy-MM-dd"))</td>
+                            <td>@g.PurchasedUnits</td>
+                            <td>@g.PurchasedValue</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="content-card mt-3">
+    <h3 class="mb-2" style="color: var(--text-primary); font-size: 16px; font-weight: 700;">تفاصيل الرصيد الحالي</h3>
+    <div class="table-responsive">
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th>الفئة</th>
+                    <th>الباركود</th>
+                    <th class="text-nowrap">الرصيد</th>
+                    <th class="text-nowrap">الحد الأدنى</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">لا توجد بيانات</td></tr>
+                }
+                else
+                {
+                    foreach (var r in Model.Rows)
+                    {
+                        var badgeClass = r.StockStatus == "out" ? "bg-danger"
+                            : r.StockStatus == "low" ? "bg-warning text-dark"
+                            : "bg-success";
+
+                        var statusText = r.StockStatus == "out" ? "منتهي"
+                            : r.StockStatus == "low" ? "منخفض"
+                            : "طبيعي";
+
+                        <tr>
+                            <td>@r.ProductName</td>
+                            <td>@r.CategoryName</td>
+                            <td>@r.Barcode</td>
+                            <td>@r.TotalStock</td>
+                            <td>@r.MinStock</td>
+                            <td><span class="badge @badgeClass">@statusText</span></td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
