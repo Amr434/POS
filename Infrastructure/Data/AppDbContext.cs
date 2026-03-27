@@ -23,6 +23,8 @@ namespace POS.Infrastructure.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Expense> Expenses { get; set; }
         public DbSet<InventoryBatch> InventoryBatches { get; set; }
+        public DbSet<InstallmentPlan> InstallmentPlans { get; set; }
+        public DbSet<InstallmentPayment> InstallmentPayments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

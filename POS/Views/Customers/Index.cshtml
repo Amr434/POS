@@ -1,0 +1,371 @@
+﻿@using Domain.Entities
+@model IEnumerable<Customer>
+
+@{
+    ViewData["Title"] = "إدارة العملاء";
+}
+
+<style>
+    * { font-family: 'Tajawal', sans-serif; }
+
+    .customers-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .page-header {
+        background: linear-gradient(180deg, #0891b2 0%, #0e7490 100%);
+        border-radius: 16px;
+        padding: 28px;
+        margin-bottom: 24px;
+        color: white;
+        box-shadow: 0 8px 24px rgba(8, 145, 178, 0.3);
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .header-title {
+        margin: 0;
+        font-size: 26px;
+        font-weight: 800;
+    }
+
+    .btn-add {
+        padding: 12px 22px;
+        background: white;
+        color: #0891b2;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: transform 0.2s;
+    }
+
+    .btn-add:hover {
+        transform: translateY(-2px);
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        padding: 14px 20px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 700;
+        color: #6b7280;
+        border-bottom: 2px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    tbody td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .badge {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .badge-info {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+        margin: 0 4px;
+    }
+
+    .btn-edit {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .btn-edit:hover {
+        background: #1e40af;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-delete:hover {
+        background: #dc2626;
+        color: white;
+    }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal-content {
+        background: white;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        padding: 20px;
+        color: white;
+        border-radius: 16px 16px 0 0;
+        background: linear-gradient(180deg, #0891b2 0%, #0e7490 100%);
+    }
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 800;
+    }
+
+    .modal-body { padding: 20px; }
+
+    .form-group { margin-bottom: 14px; }
+
+    .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 800;
+        color: #374151;
+        margin-bottom: 8px;
+    }
+
+    .required-star { color: #dc2626; margin-left: 4px; }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn {
+        padding: 12px 18px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .btn-primary {
+        background: linear-gradient(180deg, #0891b2 0%, #0e7490 100%);
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .alert {
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+    }
+
+    .alert-success { background: rgba(16, 185, 129, 0.12); color: #065f46; }
+    .alert-error { background: #fee2e2; color: #991b1b; }
+</style>
+
+<div class="customers-container">
+    <div id="alertContainer"></div>
+
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1 class="header-title">
+                    <i class="bi bi-people"></i>
+                    إدارة العملاء
+                </h1>
+                <p style="margin: 8px 0 0 0; opacity: 0.95; font-size: 14px;">
+                    إضافة وتعديل وحذف بيانات العملاء
+                </p>
+            </div>
+
+            <button class="btn-add" onclick="openModal('add')">
+                <i class="bi bi-plus-circle-fill"></i>
+                إضافة عميل جديد
+            </button>
+        </div>
+    </div>
+
+    <div class="table-card">
+        @if (Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>الاسم</th>
+                        <th>الهاتف</th>
+                        <th>البريد الإلكتروني</th>
+                        <th>العنوان</th>
+                        <th>عدد الفواتير</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in Model)
+                    {
+                        <tr data-id="@customer.Id"
+                            data-name="@customer.Name"
+                            data-phone="@customer.Phone"
+                            data-email="@customer.Email"
+                            data-address="@customer.Address">
+                            <td><strong>@customer.Name</strong></td>
+                            <td>@(customer.Phone ?? "-")</td>
+                            <td>@(customer.Email ?? "-")</td>
+                            <td>@(customer.Address ?? "-")</td>
+                            <td>
+                                <span class="badge badge-info">
+                                    @customer.Sales.Count فاتورة
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-action btn-edit" onclick="editCustomer(this)" title="تعديل">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteCustomer(this)" title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div style="text-align: center; padding: 60px 20px; color: #6b7280;">
+                <i class="bi bi-inbox" style="font-size: 64px; color: #d1d5db;"></i>
+                <h3 style="margin: 16px 0 8px 0;">لا يوجد عملاء</h3>
+                <p>ابدأ بإضافة عملاء جدد</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="customerModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">إضافة عميل جديد</h2>
+        </div>
+
+        <form id="customerForm">
+            <div class="modal-body">
+                <input type="hidden" id="customerId">
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <span class="required-star">*</span>
+                        الاسم
+                    </label>
+                    <input class="form-control" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">رقم البطاقه</label>
+                    <input class="form-control" id="NationalId" type="tel">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">الهاتف</label>
+                    <input class="form-control" id="customerPhone" type="tel">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">البريد الإلكتروني</label>
+                    <input class="form-control" id="customerEmail" type="email">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">العنوان</label>
+                    <input class="form-control" id="customerAddress">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">
+                    <i class="bi bi-x-circle"></i>
+                    إلغاء
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i>
+                    حفظ
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Customer/index.js"></script>
+}
+
