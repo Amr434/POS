@@ -27,9 +27,5 @@ namespace Domain.Entities
         public InstallmentPlan? InstallmentPlan { get; set; }
     }
 
-    public enum PaymentMethod
-    {
-        Cash = 1,
-        Installment = 2
-    }
+ 
 }

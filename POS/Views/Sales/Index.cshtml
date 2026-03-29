@@ -1,0 +1,529 @@
+﻿@using Domain.Entities
+@using Domain.Enums
+@model PaginatedList<Sale>
+
+@{
+    ViewData["Title"] = "قائمة الفواتير";
+    var customers = ViewBag.Customers as List<SelectListItem>;
+}
+
+<style>
+    * { font-family: 'Tajawal', sans-serif; }
+
+    .sales-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    .page-header {
+        background: linear-gradient(180deg, #059669 0%, #047857 100%);
+        border-radius: 16px;
+        padding: 28px;
+        margin-bottom: 24px;
+        color: white;
+        box-shadow: 0 8px 24px rgba(5, 150, 105, 0.3);
+    }
+
+    .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .btn-new-sale {
+        padding: 12px 22px;
+        background: white;
+        color: #059669;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: transform 0.2s;
+    }
+
+    .btn-new-sale:hover {
+        transform: translateY(-2px);
+        color: #059669;
+    }
+
+    .filter-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        padding: 20px;
+        margin-bottom: 24px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label {
+        font-size: 14px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .form-control {
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+    }
+
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        padding: 14px 16px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 700;
+        color: #6b7280;
+        border-bottom: 2px solid #e5e7eb;
+        background: #f9fafb;
+    }
+
+    tbody td {
+        padding: 16px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background: #f9fafb;
+    }
+
+    .badge {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-block;
+    }
+
+    .badge-cash { background: #d1fae5; color: #065f46; }
+    .badge-installment { background: #fef3c7; color: #92400e; }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+        margin: 0 4px;
+    }
+
+    .btn-view {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .btn-view:hover {
+        background: #1e40af;
+        color: white;
+    }
+
+    .btn-delete {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .btn-delete:hover {
+        background: #dc2626;
+        color: white;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 20px;
+    }
+
+    .page-link {
+        padding: 8px 14px;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        color: #374151;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .page-link:hover {
+        background: #f3f4f6;
+        color: #059669;
+    }
+
+    .page-link.active {
+        background: #059669;
+        color: white;
+        border-color: #059669;
+    }
+
+    .page-link.disabled {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+
+    .alert {
+        padding: 12px 18px;
+        border-radius: 10px;
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+    }
+
+    .alert-success { background: rgba(16, 185, 129, 0.12); color: #065f46; }
+</style>
+
+<div class="sales-container">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
+    }
+
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1 style="margin: 0; font-size: 26px; font-weight: 800;">
+                    <i class="bi bi-receipt"></i>
+                    قائمة الفواتير
+                </h1>
+                <p style="margin: 8px 0 0 0; opacity: 0.95; font-size: 14px;">
+                    عرض وإدارة جميع فواتير البيع
+                </p>
+            </div>
+
+            <a href="/Sales/Create" class="btn-new-sale">
+                <i class="bi bi-plus-circle-fill"></i>
+                فاتورة بيع جديدة
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <form method="get" asp-action="Index">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label class="form-label">بحث</label>
+                    <input type="text" 
+                           name="searchTerm" 
+                           class="form-control" 
+                           placeholder="اسم العميل أو رقم الهاتف"
+                           value="@ViewBag.CurrentSearch">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">العميل</label>
+                    <select name="customerId" class="form-control">
+                        <option value="">جميع العملاء</option>
+                        @if (customers != null)
+                        {
+                            @foreach (var customer in customers)
+                            {
+                                <option value="@customer.Value" selected="@(customer.Value == ViewBag.CurrentCustomer?.ToString())">
+                                    @customer.Text
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">من تاريخ</label>
+                    <input type="date" 
+                           name="fromDate" 
+                           class="form-control"
+                           value="@(ViewBag.FromDate != null ? ((DateTime)ViewBag.FromDate).ToString("yyyy-MM-dd") : "")">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">إلى تاريخ</label>
+                    <input type="date" 
+                           name="toDate" 
+                           class="form-control"
+                           value="@(ViewBag.ToDate != null ? ((DateTime)ViewBag.ToDate).ToString("yyyy-MM-dd") : "")">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <a href="/Sales/Index" class="btn-action" style="width: auto; padding: 10px 20px; background: #f3f4f6; color: #374151;">
+                    <i class="bi bi-x-circle"></i>
+                    مسح
+                </a>
+                <button type="submit" style="width: auto; padding: 10px 20px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;">
+                    <i class="bi bi-search"></i>
+                    بحث
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sales Table -->
+    <div class="table-card">
+        @if (Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>التاريخ</th>
+                        <th>العميل</th>
+                        <th>عدد المنتجات</th>
+                        <th>الإجمالي</th>
+                        <th>المدفوع</th>
+                        <th>المتبقي</th>
+                        <th>طريقة الدفع</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sale in Model)
+                    {
+                        <tr>
+                            <td><strong>#@sale.Id</strong></td>
+                            <td>@sale.SaleDate.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div>
+                                    <strong>@sale.Customer.Name</strong><br>
+                                    <small style="color: #6b7280;">@sale.Customer.Phone</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge" style="background: #e0e7ff; color: #4338ca;">
+                                    @sale.SaleItems.Count منتج
+                                </span>
+                            </td>
+                            <td style="font-weight: 700;">@sale.TotalAmount.ToString("N2") ج.م</td>
+                            <td style="color: #059669; font-weight: 700;">@sale.PaidAmount.ToString("N2") ج.م</td>
+                            <td style="color: #dc2626; font-weight: 700;">@sale.RemainingAmount.ToString("N2") ج.م</td>
+                            <td>
+                                <span class="badge @(sale.PaymentMethod == 0 ? "badge-cash" : "badge-installment")">
+                                    @(sale.PaymentMethod == PaymentMethod.Cash ? "كاش" : "تقسيط")
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn-action btn-view" onclick="viewSale(@sale.Id)" title="عرض">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button class="btn-action btn-delete" onclick="deleteSale(@sale.Id, '@sale.Customer.Name')" title="حذف">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination">
+                    <a class="page-link @(Model.HasPreviousPage ? "" : "disabled")" 
+                       href="?pageNumber=@(Model.PageIndex - 1)&searchTerm=@ViewBag.CurrentSearch&customerId=@ViewBag.CurrentCustomer&fromDate=@ViewBag.FromDate&toDate=@ViewBag.ToDate">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <a class="page-link @(i == Model.PageIndex ? "active" : "")" 
+                           href="?pageNumber=@i&searchTerm=@ViewBag.CurrentSearch&customerId=@ViewBag.CurrentCustomer&fromDate=@ViewBag.FromDate&toDate=@ViewBag.ToDate">
+                            @i
+                        </a>
+                    }
+
+                    <a class="page-link @(Model.HasNextPage ? "" : "disabled")" 
+                       href="?pageNumber=@(Model.PageIndex + 1)&searchTerm=@ViewBag.CurrentSearch&customerId=@ViewBag.CurrentCustomer&fromDate=@ViewBag.FromDate&toDate=@ViewBag.ToDate">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <div style="text-align: center; padding: 60px 20px; color: #6b7280;">
+                <i class="bi bi-inbox" style="font-size: 64px; color: #d1d5db;"></i>
+                <h3 style="margin: 16px 0 8px 0;">لا توجد فواتير</h3>
+                <p>ابدأ بإنشاء فاتورة بيع جديدة</p>
+                <a href="/Sales/Create" class="btn-new-sale" style="margin: 20px auto; width: fit-content;">
+                    <i class="bi bi-plus-circle"></i>
+                    إنشاء فاتورة
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header" style="background: #059669; color: white;">
+                <h5 class="modal-title">تفاصيل الفاتورة</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-success" role="status"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function viewSale(id) {
+            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
+            modal.show();
+
+            try {
+                const response = await fetch(`/Sales/GetDetails/${id}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'حدث خطأ');
+                }
+
+                const html = `
+                    <div style="padding: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                            <div>
+                                <strong style="color: #6b7280;">رقم الفاتورة:</strong>
+                                <div style="font-size: 18px; font-weight: 700;">#${data.id}</div>
+                            </div>
+                            <div>
+                                <strong style="color: #6b7280;">التاريخ:</strong>
+                                <div style="font-size: 18px; font-weight: 700;">${new Date(data.saleDate).toLocaleDateString('ar-EG')}</div>
+                            </div>
+                            <div>
+                                <strong style="color: #6b7280;">العميل:</strong>
+                                <div style="font-size: 16px; font-weight: 700;">${data.customerName}</div>
+                                <div style="color: #6b7280; font-size: 14px;">${data.customerPhone}</div>
+                            </div>
+                            <div>
+                                <strong style="color: #6b7280;">طريقة الدفع:</strong>
+                                <div>
+                                    <span class="badge ${data.paymentType === 0 ? 'badge-cash' : 'badge-installment'}">
+                                        ${data.paymentType === 0 ? 'كاش' : 'تقسيط'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 style="font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">
+                            <i class="bi bi-list-ul"></i> المنتجات
+                        </h6>
+
+                        <table style="width: 100%; margin-bottom: 24px;">
+                            <thead>
+                                <tr style="background: #f9fafb;">
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">المنتج</th>
+                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e5e7eb;">الكمية</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">السعر</th>
+                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">الإجمالي</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.items.map(item => `
+                                    <tr>
+                                        <td style="padding: 10px; border-bottom: 1px solid #f3f4f6;">${item.productName}</td>
+                                        <td style="padding: 10px; text-align: center; border-bottom: 1px solid #f3f4f6;">${item.quantity}</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #f3f4f6;">${item.unitPrice.toFixed(2)} ج.م</td>
+                                        <td style="padding: 10px; font-weight: 700; border-bottom: 1px solid #f3f4f6;">${item.total.toFixed(2)} ج.م</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+
+                        <div style="background: #f9fafb; padding: 20px; border-radius: 12px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                <span style="font-weight: 700;">الإجمالي:</span>
+                                <span style="font-size: 18px; font-weight: 700;">${data.totalAmount.toFixed(2)} ج.م</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #059669;">
+                                <span style="font-weight: 700;">المدفوع:</span>
+                                <span style="font-size: 18px; font-weight: 700;">${data.paidAmount.toFixed(2)} ج.م</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid #e5e7eb; color: #dc2626;">
+                                <span style="font-weight: 700;">المتبقي:</span>
+                                <span style="font-size: 20px; font-weight: 800;">${data.remainingAmount.toFixed(2)} ج.م</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('detailsContent').innerHTML = html;
+
+            } catch (error) {
+                document.getElementById('detailsContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        async function deleteSale(id, customerName) {
+            if (!confirm(`هل أنت متأكد من حذف فاتورة "${customerName}"؟\nسيتم إرجاع المنتجات إلى حالة "جديد".`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Sales/Delete/${id}`, { method: 'POST' });
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert(result.message);
+                    location.reload();
+                } else {
+                    alert(result.error);
+                }
+            } catch (error) {
+                alert('حدث خطأ أثناء الحذف');
+            }
+        }
+    </script>
+}

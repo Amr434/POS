@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Domain.Enums
+﻿public enum PaymentMethod
 {
-    public enum PaymentType
-    {
-        Cash,          // نقد
-        Installment    // تقسيط
-    }
+    Cash = 0,
+    Installment = 1
 }

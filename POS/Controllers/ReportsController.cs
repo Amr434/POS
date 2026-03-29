@@ -31,7 +31,7 @@ namespace POS.Controllers
             var query = _context.Sales
                 .AsNoTracking()
                 .Include(s => s.Customer)
-                .Include(s => s.Items)
+                .Include(s => s.SaleItems)
                 .ThenInclude(i => i.Product)
                 .AsQueryable();
 
@@ -49,7 +49,7 @@ namespace POS.Controllers
                 TotalAmount = s.TotalAmount,
                 PaidAmount = s.PaidAmount,
                 RemainingAmount = s.RemainingAmount,
-                ItemsCount = s.Items?.Sum(i => i.Quantity) ?? 0
+                ItemsCount = s.SaleItems?.Sum(i => i.Quantity) ?? 0
             }).ToList();
 
             var grouped = rows
@@ -203,12 +203,12 @@ namespace POS.Controllers
                 {
                     i.ProductId,
                     i.Quantity,
-                    i.UnitSalePrice,
+                    i.UnitPrice,
                     SaleDate = i.Sale.SaleDate
                 })
                 .ToListAsync();
 
-            var revenue = saleItems.Sum(i => i.Quantity * i.UnitSalePrice);
+            var revenue = saleItems.Sum(i => i.Quantity * i.UnitPrice);
 
             // Weighted-average purchase cost per product up to `To` (inclusive)
             var avgCosts = await _context.InventoryBatches
@@ -241,7 +241,7 @@ namespace POS.Controllers
                 .OrderBy(g => g.Key)
                 .Select(g =>
                 {
-                    var grpRevenue = g.Sum(x => x.Quantity * x.UnitSalePrice);
+                    var grpRevenue = g.Sum(x => x.Quantity * x.UnitPrice);
                     var grpCogs = g.Sum(x =>
                     {
                         var cost = avgCosts.TryGetValue(x.ProductId, out var c) ? c : 0m;
@@ -297,7 +297,7 @@ namespace POS.Controllers
             var rows = await _context.Sales
                 .AsNoTracking()
                 .Include(s => s.Customer)
-                .Include(s => s.Items)
+                .Include(s => s.SaleItems)
                 .Where(s => s.SaleDate >= range.From && s.SaleDate <= range.To)
                 .OrderByDescending(s => s.SaleDate)
                 .Select(s => new
@@ -305,7 +305,7 @@ namespace POS.Controllers
                     s.Id,
                     s.SaleDate,
                     CustomerName = s.Customer != null ? s.Customer.Name : "—",
-                    ItemsCount = s.Items.Sum(i => i.Quantity),
+                    ItemsCount = s.SaleItems.Sum(i => i.Quantity),
                     s.TotalAmount,
                     s.PaidAmount,
                     s.RemainingAmount
@@ -391,7 +391,7 @@ namespace POS.Controllers
                 {
                     i.ProductId,
                     i.Quantity,
-                    i.UnitSalePrice,
+                    i.UnitPrice,
                     SaleDate = i.Sale.SaleDate
                 })
                 .ToListAsync();
@@ -423,7 +423,7 @@ namespace POS.Controllers
                 .OrderBy(g => g.Key)
                 .Select(g =>
                 {
-                    var revenue = g.Sum(x => x.Quantity * x.UnitSalePrice);
+                    var revenue = g.Sum(x => x.Quantity * x.UnitPrice);
                     var cogs = g.Sum(x =>
                     {
                         var cost = avgCosts.TryGetValue(x.ProductId, out var c) ? c : 0m;

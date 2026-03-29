@@ -220,6 +220,101 @@
     </div>
 </div>
 
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center" style="border-radius: 12px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+            <div class="card-body">
+                <div style="width: 60px; height: 60px; background: #d1fae5; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                    <i class="bi bi-receipt" style="font-size: 28px; color: #059669;"></i>
+                </div>
+                <h3 style="font-size: 28px; font-weight: 800; margin-bottom: 8px;" id="totalSales">0</h3>
+                <p style="color: #6b7280; margin: 0;">إجمالي الفواتير</p>
+                <a href="/Sales/Index" class="btn btn-sm btn-success mt-3">
+                    <i class="bi bi-arrow-left"></i>
+                    عرض الكل
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add more cards... -->
+</div>
+
+<div class="card mt-4" style="border-radius: 12px; overflow: hidden;">
+    <div class="card-header" style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+        <h5 style="margin: 0; font-weight: 700;">
+            <i class="bi bi-receipt"></i>
+            آخر الفواتير
+        </h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>العميل</th>
+                    <th>التاريخ</th>
+                    <th>الإجمالي</th>
+                    <th>الحالة</th>
+                </tr>
+            </thead>
+            <tbody id="recentSalesTable">
+                <tr>
+                    <td colspan="5" class="text-center">
+                        <div class="spinner-border text-success" role="status"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="text-center mt-3">
+            <a href="/Sales/Index" class="btn btn-outline-success">
+                عرض جميع الفواتير
+                <i class="bi bi-arrow-left"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function loadDashboardData() {
+            try {
+                // Load sales count
+                const statsResponse = await fetch('/Sales/GetStats');
+                const stats = await statsResponse.json();
+                document.getElementById('totalSales').textContent = stats.totalSales;
+
+                // Load recent sales
+                const salesResponse = await fetch('/Sales/GetRecent?count=5');
+                const sales = await salesResponse.json();
+                
+                const tableBody = document.getElementById('recentSalesTable');
+                if (sales.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">لا توجد فواتير</td></tr>';
+                } else {
+                    tableBody.innerHTML = sales.map(sale => `
+                        <tr>
+                            <td><strong>#${sale.id}</strong></td>
+                            <td>${sale.customerName}</td>
+                            <td>${new Date(sale.saleDate).toLocaleDateString('ar-EG')}</td>
+                            <td><strong>${sale.totalAmount.toFixed(2)} ج.م</strong></td>
+                            <td>
+                                <span class="badge ${sale.paymentMethod === 0 ? 'bg-success' : 'bg-warning'}">
+                                    ${sale.paymentMethod === 0 ? 'كاش' : 'تقسيط'}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        loadDashboardData();
+    </script>
+}
+
 <style>
     .quick-action-card {
         display: flex;
