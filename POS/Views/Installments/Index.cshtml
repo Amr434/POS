@@ -1,0 +1,1136 @@
+﻿@using Domain.Entities
+@using Domain.Enums
+@model PaginatedList<InstallmentPayment>
+@{
+    ViewData["Title"] = "إدارة الأقساط";
+    var customers = ViewBag.Customers as List<SelectListItem>;
+}
+
+<style>
+    * {
+        font-family: 'Tajawal', sans-serif;
+    }
+
+    .installments-container {
+        max-width: 1800px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* ===== Header ===== */
+    .page-header {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6d28d9 100%);
+        border-radius: 16px;
+        padding: 32px;
+        margin-bottom: 24px;
+        color: white;
+        box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        }
+
+    .header-content {
+        position: relative;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .quick-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .quick-btn {
+        padding: 10px 18px;
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+        backdrop-filter: blur(10px);
+    }
+
+        .quick-btn:hover {
+            background: white;
+            color: #8b5cf6;
+            transform: translateY(-2px);
+        }
+
+    /* ===== Stats Grid ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .stat-card.purple::before {
+            background: #8b5cf6;
+        }
+
+        .stat-card.green::before {
+            background: #059669;
+        }
+
+        .stat-card.red::before {
+            background: #dc2626;
+        }
+
+        .stat-card.orange::before {
+            background: #f59e0b;
+        }
+
+    .stat-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 16px;
+    }
+
+    .stat-card.purple .stat-icon {
+        background: rgba(139, 92, 246, 0.1);
+        color: #8b5cf6;
+    }
+
+    .stat-card.green .stat-icon {
+        background: rgba(5, 150, 105, 0.1);
+        color: #059669;
+    }
+
+    .stat-card.red .stat-icon {
+        background: rgba(220, 38, 38, 0.1);
+        color: #dc2626;
+    }
+
+    .stat-card.orange .stat-icon {
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    .stat-value {
+        font-size: 36px;
+        font-weight: 800;
+        margin-bottom: 4px;
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: #6b7280;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .stat-trend {
+        font-size: 12px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+        .stat-trend.up {
+            color: #059669;
+        }
+
+        .stat-trend.down {
+            color: #dc2626;
+        }
+
+    /* ===== Filter Card ===== */
+    .filter-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+
+    .filter-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .filter-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-label {
+        font-size: 13px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .form-control {
+        padding: 11px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+        }
+
+    /* ===== Table Card ===== */
+    .table-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+
+    .table-header {
+        padding: 20px 24px;
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .table-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    thead th {
+        padding: 16px 20px;
+        text-align: right;
+        font-size: 13px;
+        font-weight: 700;
+        color: #6b7280;
+        background: #f9fafb;
+        border-bottom: 2px solid #e5e7eb;
+        white-space: nowrap;
+    }
+
+    tbody td {
+        padding: 18px 20px;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+    }
+
+    tbody tr {
+        transition: all 0.2s;
+    }
+
+        tbody tr:hover {
+            background: #faf5ff;
+        }
+
+        tbody tr.overdue-row {
+            background: #fef2f2;
+        }
+
+            tbody tr.overdue-row:hover {
+                background: #fee2e2;
+            }
+
+    /* ===== Status Badges ===== */
+    .status-badge {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .status-pending {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border: 1px solid #fbbf24;
+    }
+
+    .status-paid {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        color: #065f46;
+        border: 1px solid #10b981;
+    }
+
+    .status-overdue {
+        background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+        color: #991b1b;
+        border: 1px solid #f87171;
+        animation: pulse 2s infinite;
+    }
+
+    .status-partial {
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        color: #1e40af;
+        border: 1px solid #60a5fa;
+    }
+
+    
+
+    /* ===== Buttons ===== */
+    .btn-action {
+        width: 38px;
+        height: 38px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.2s;
+        margin: 0 3px;
+    }
+
+    .btn-pay {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+        .btn-pay:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+
+    .btn-view {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+        .btn-view:hover {
+            background: #1e40af;
+            color: white;
+        }
+
+    .btn-primary {
+        padding: 12px 24px;
+        background: linear-gradient(180deg, #8b5cf6 0%, #7c3aed 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139, 92, 246, 0.3);
+        }
+
+    .btn-secondary {
+        padding: 12px 24px;
+        background: white;
+        color: #6b7280;
+        border: 1px solid #d1d5db;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+        }
+
+    /* ===== Customer Info ===== */
+    .customer-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .customer-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        font-size: 16px;
+    }
+
+    .customer-details {
+        flex: 1;
+    }
+
+    .customer-name {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 2px;
+    }
+
+    .customer-phone {
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    /* ===== Payment Info ===== */
+    .payment-number {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: #f3f4f6;
+        border-radius: 8px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .amount-cell {
+        font-weight: 700;
+        font-size: 15px;
+    }
+
+    .amount-due {
+        color: #6b7280;
+    }
+
+    .amount-paid {
+        color: #059669;
+    }
+
+    .amount-remaining {
+        color: #dc2626;
+    }
+
+    /* ===== Date Badge ===== */
+    .date-badge {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 8px 12px;
+        background: #f9fafb;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .date-day {
+        font-size: 20px;
+        font-weight: 800;
+        color: #1f2937;
+        line-height: 1;
+    }
+
+    .date-month {
+        font-size: 11px;
+        color: #6b7280;
+        font-weight: 600;
+        margin-top: 2px;
+    }
+
+    .overdue-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        background: #fee2e2;
+        color: #991b1b;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-top: 6px;
+    }
+
+    /* ===== Payment Modal ===== */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        opacity: 0;
+        transition: opacity 0.3s;
+        backdrop-filter: blur(4px);
+    }
+
+        .modal-overlay.show {
+            opacity: 1;
+        }
+
+    .modal-dialog {
+        background: white;
+        border-radius: 16px;
+        width: 550px;
+        max-width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        transform: scale(0.9);
+        transition: transform 0.3s;
+    }
+
+    .modal-overlay.show .modal-dialog {
+        transform: scale(1);
+    }
+
+    .modal-header {
+        padding: 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+    .btn-close-white {
+        width: 32px;
+        height: 32px;
+        border: none;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border-radius: 50%;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .btn-close-white:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+    .modal-body {
+        padding: 24px;
+    }
+
+    .info-section {
+        background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+        border: 1px solid #e9d5ff;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 24px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px dashed #e9d5ff;
+    }
+
+        .info-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+    .info-label {
+        color: #6b7280;
+        font-weight: 600;
+    }
+
+    .info-value {
+        font-weight: 800;
+        font-size: 16px;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+        .form-actions .btn-secondary {
+            flex: 1;
+        }
+
+        .form-actions .btn-primary {
+            flex: 2;
+            justify-content: center;
+        }
+
+    /* ===== Empty State ===== */
+    .empty-state {
+        text-align: center;
+        padding: 80px 20px;
+        color: #6b7280;
+    }
+
+    .empty-icon {
+        font-size: 80px;
+        color: #e5e7eb;
+        margin-bottom: 20px;
+    }
+
+    /* ===== Progress Bar ===== */
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #f3f4f6;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #8b5cf6 0%, #7c3aed 100%);
+        border-radius: 10px;
+        transition: width 0.3s;
+    }
+</style>
+
+<div class="installments-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div>
+                <h1 style="margin: 0; font-size: 28px; font-weight: 800;">
+                    <i class="bi bi-credit-card-2-front"></i>
+                    نظام إدارة الأقساط
+                </h1>
+                <p style="margin: 10px 0 0 0; opacity: 0.95; font-size: 15px;">
+                    متابعة دقيقة للأقساط الشهرية والمتأخرات
+                </p>
+            </div>
+            <div class="quick-actions">
+                <a href="/Installments/OverdueReport" class="quick-btn">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    المتأخرات
+                </a>
+                <a href="/Installments/MonthlyReport" class="quick-btn">
+                    <i class="bi bi-calendar-month"></i>
+                    التقرير الشهري
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Dashboard -->
+    <div class="stats-grid">
+        <div class="stat-card purple">
+            <div class="stat-icon">
+                <i class="bi bi-list-check"></i>
+            </div>
+            <div class="stat-value" id="totalPayments">-</div>
+            <div class="stat-label">إجمالي الأقساط</div>
+            <div class="stat-trend up">
+                <i class="bi bi-arrow-up-circle-fill"></i>
+                <span id="totalTrend">+12% عن الشهر الماضي</span>
+            </div>
+        </div>
+
+        <div class="stat-card green">
+            <div class="stat-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+            <div class="stat-value" id="paidPayments">-</div>
+            <div class="stat-label">أقساط مدفوعة</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="paidProgress" style="width: 0%; background: linear-gradient(90deg, #059669 0%, #047857 100%);"></div>
+            </div>
+        </div>
+
+        <div class="stat-card red">
+            <div class="stat-icon">
+                <i class="bi bi-exclamation-circle"></i>
+            </div>
+            <div class="stat-value" id="overduePayments">-</div>
+            <div class="stat-label">أقساط متأخرة</div>
+            <div class="stat-trend down">
+                <i class="bi bi-arrow-down-circle-fill"></i>
+                <span>يحتاج متابعة</span>
+            </div>
+        </div>
+
+        <div class="stat-card orange">
+            <div class="stat-icon">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+            <div class="stat-value" id="thisMonthDue">-</div>
+            <div class="stat-label">مستحقات هذا الشهر</div>
+            <small style="color: #6b7280; font-size: 12px; margin-top: 4px;">
+                <i class="bi bi-info-circle"></i>
+                <span id="thisMonthCount">-</span> قسط
+            </small>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-card">
+        <div class="filter-header">
+            <div class="filter-title">
+                <i class="bi bi-funnel"></i>
+                فلترة وبحث
+            </div>
+            <button type="button" id="toggleFilters" class="btn-secondary" style="padding: 8px 16px;">
+                <i class="bi bi-chevron-down"></i>
+                إظهار/إخفاء
+            </button>
+        </div>
+
+        <form method="get" asp-action="Index" id="filterForm">
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-search"></i>
+                        بحث
+                    </label>
+                    <input type="text" name="searchTerm" class="form-control"
+                           placeholder="اسم العميل أو رقم الهاتف" value="@ViewBag.CurrentSearch">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-person"></i>
+                        العميل
+                    </label>
+                    <select name="customerId" class="form-control">
+                        <option value="">جميع العملاء</option>
+                        @if (customers != null)
+                        {
+                            @foreach (var customer in customers)
+                            {
+                                <option value="@customer.Value" selected="@(customer.Value == ViewBag.CurrentCustomer?.ToString())">
+                                    @customer.Text
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-flag"></i>
+                        الحالة
+                    </label>
+                    <select name="status" class="form-control">
+                        <option value="">الكل</option>
+                        <option value="1">⏳ معلق</option>
+                        <option value="2">✓ مدفوع</option>
+                        <option value="3">🔴 متأخر</option>
+                        <option value="4">⚡ مدفوع جزئياً</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" style="opacity: 0;">-</label>
+                    <label style="display: flex; align-items: center; gap: 10px; padding: 12px; background: #fef2f2; border-radius: 8px; cursor: pointer; border: 1px solid #fecaca;">
+                        <input type="checkbox" name="showOverdueOnly" value="true"
+                               checked="@ViewBag.ShowOverdueOnly" style="width: 20px; height: 20px;">
+                        <span style="font-weight: 700; color: #991b1b;">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            المتأخرات فقط
+                        </span>
+                    </label>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                <a href="/Installments/Index" class="btn-secondary">
+                    <i class="bi bi-x-circle"></i>
+                    مسح الفلاتر
+                </a>
+                <button type="submit" class="btn-primary">
+                    <i class="bi bi-search"></i>
+                    بحث
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="table-card">
+        <div class="table-header">
+            <div class="table-title">
+                <i class="bi bi-table"></i>
+                قائمة الأقساط
+                <span style="background: #f3f4f6; padding: 4px 12px; border-radius: 6px; font-size: 13px; color: #6b7280;">
+                    @Model.TotalCount قسط
+                </span>
+            </div>
+            <button onclick="printTable()" class="btn-secondary" style="padding: 8px 16px;">
+                <i class="bi bi-printer"></i>
+                طباعة
+            </button>
+        </div>
+
+        @if (Model.Any())
+        {
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 250px;">العميل</th>
+                        <th style="width: 120px;">رقم القسط</th>
+                        <th style="width: 130px;">الاستحقاق</th>
+                        <th style="width: 120px;">المستحق</th>
+                        <th style="width: 120px;">المدفوع</th>
+                        <th style="width: 120px;">المتبقي</th>
+                        <th style="width: 130px;">الحالة</th>
+                        <th style="width: 120px; text-align: center;">الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var payment in Model)
+                    {
+                        var remaining = payment.AmountDue - payment.AmountPaid;
+                        var isOverdue = payment.Status == PaymentStatus.Overdue;
+                        var daysOverdue = isOverdue ? (DateTime.Now - payment.DueDate).Days : 0;
+
+                        var statusClass = payment.Status switch
+                        {
+                            PaymentStatus.Paid => "status-paid",
+                            PaymentStatus.Pending => "status-pending",
+                            PaymentStatus.Overdue => "status-overdue",
+                            PaymentStatus.PartiallyPaid => "status-partial",
+                            _ => ""
+                        };
+
+                        var statusIcon = payment.Status switch
+                        {
+                            PaymentStatus.Paid => "bi-check-circle-fill",
+                            PaymentStatus.Pending => "bi-clock",
+                            PaymentStatus.Overdue => "bi-exclamation-triangle-fill",
+                            PaymentStatus.PartiallyPaid => "bi-dash-circle",
+                            _ => "bi-question-circle"
+                        };
+
+                        <tr class="@(isOverdue ? "overdue-row" : "")">
+                            <td>
+                                <div class="customer-info">
+                                    <div class="customer-avatar">
+                                        @payment.InstallmentPlan.Sale.Customer.Name.Substring(0, 1)
+                                    </div>
+                                    <div class="customer-details">
+                                        <div class="customer-name">@payment.InstallmentPlan.Sale.Customer.Name</div>
+                                        <div class="customer-phone">
+                                            <i class="bi bi-telephone"></i>
+                                            @payment.InstallmentPlan.Sale.Customer.Phone
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="payment-number">
+                                    <i class="bi bi-hash"></i>
+                                    @payment.PaymentNumber
+                                    <span style="color: #9ca3af;">/</span>
+                                    @payment.InstallmentPlan.NumberOfMonths
+                                </div>
+                            </td>
+                            <td>
+                                <div class="date-badge">
+                                    <div class="date-day">@payment.DueDate.Day</div>
+                                    <div class="date-month">@payment.DueDate.ToString("MMM yyyy")</div>
+                                </div>
+                                @if (isOverdue)
+                                {
+                                    <div class="overdue-label">
+                                        <i class="bi bi-clock-history"></i>
+                                        متأخر @daysOverdue يوم
+                                    </div>
+                                }
+                        </td>
+                        <td class="amount-cell amount-due">
+                            @payment.AmountDue.ToString("N2") ج.م
+                        </td>
+                        <td class="amount-cell amount-paid">
+                            @payment.AmountPaid.ToString("N2") ج.م
+                        </td>
+                        <td class="amount-cell amount-remaining">
+                            @remaining.ToString("N2") ج.م
+                        </td>
+                        <td>
+                            <span class="status-badge @statusClass">
+                                <i class="bi @statusIcon"></i>
+                                @(payment.Status switch
+                                {
+                                    PaymentStatus.Paid => "مدفوع",
+                                    PaymentStatus.Pending => "معلق",
+                                    PaymentStatus.Overdue => "متأخر",
+                                    PaymentStatus.PartiallyPaid => "جزئي",
+                                    _ => "-"
+                                })
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                @if (payment.Status != PaymentStatus.Paid)
+                                {
+                                    <button class="btn-action btn-pay" onclick="openPayModal(@payment.Id)" title="دفع القسط">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </button>
+                                }
+                                <button class="btn-action btn-view" onclick="viewPayment(@payment.Id)" title="عرض التفاصيل">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="pagination" style="padding: 20px; display: flex; justify-content: center; gap: 8px;">
+                    <a class="page-link @(Model.HasPreviousPage ? "" : "disabled")"
+                       href="?pageNumber=@(Model.PageIndex - 1)&searchTerm=@ViewBag.CurrentSearch&customerId=@ViewBag.CurrentCustomer&status=@ViewBag.CurrentStatus&showOverdueOnly=@ViewBag.ShowOverdueOnly">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <a class="page-link @(i == Model.PageIndex ? "active" : "")"
+                           href="?pageNumber=@i&searchTerm=@ViewBag.CurrentSearch&customerId=@ViewBag.CurrentCustomer&status=@ViewBag.CurrentStatus&showOverdueOnly=@ViewBag.ShowOverdueOnly">
+                            @i
+                        </a>
+                    }
+
+                    <a class="page-link @(Model.HasNextPage ? "" : "disabled")"
+                       href="?pageNumber=@(Model.PageIndex + 1)&searchTerm=@ViewBag.CurrentSearch&customerId=@ViewBag.CurrentCustomer&status=@ViewBag.CurrentStatus&showOverdueOnly=@ViewBag.ShowOverdueOnly">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="bi bi-calendar-x"></i>
+                </div>
+                <h3 style="margin: 0 0 10px 0; color: #1f2937;">لا توجد أقساط</h3>
+                <p style="margin: 0;">لم يتم العثور على أقساط مطابقة للفلاتر المحددة</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div id="paymentModal" class="modal-overlay">
+    <div class="modal-dialog">
+        <div class="modal-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
+            <h3>
+                <i class="bi bi-cash-coin"></i>
+                تسجيل دفع قسط
+            </h3>
+            <button type="button" onclick="closePayModal()" class="btn-close-white">×</button>
+        </div>
+        <div class="modal-body">
+            <!-- Loading State -->
+            <div id="paymentLoading" class="text-center py-4">
+                <div class="spinner-border" style="color: #8b5cf6;"></div>
+                <p class="mt-2" style="color: #6b7280;">جاري التحميل...</p>
+            </div>
+
+            <!-- Payment Form -->
+            <form id="paymentForm" style="display: none;">
+                <input type="hidden" id="paymentId">
+
+                <!-- Customer Info -->
+                <div class="info-section">
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-person"></i>
+                            العميل
+                        </span>
+                        <strong class="info-value" id="payCustomerName" style="color: #8b5cf6;">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-hash"></i>
+                            رقم القسط
+                        </span>
+                        <strong class="info-value" id="payPaymentNumber">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-calendar-check"></i>
+                            تاريخ الاستحقاق
+                        </span>
+                        <strong class="info-value" id="payDueDate">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-currency-exchange"></i>
+                            المبلغ المستحق
+                        </span>
+                        <strong class="info-value" id="payAmountDue" style="color: #f59e0b;">-</strong>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">
+                            <i class="bi bi-exclamation-circle"></i>
+                            المتبقي للدفع
+                        </span>
+                        <strong class="info-value" id="payRemainingBalance" style="color: #dc2626; font-size: 20px;">-</strong>
+                    </div>
+                </div>
+
+                <!-- Payment Amount -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label" style="font-size: 15px;">
+                        <span style="color: #dc2626;">*</span>
+                        <i class="bi bi-cash-stack"></i>
+                        المبلغ المدفوع
+                    </label>
+                    <div style="position: relative;">
+                        <input type="number" id="payAmount" class="form-control"
+                               style="font-size: 18px; font-weight: 700; padding-right: 50px;"
+                               placeholder="0.00" step="0.01" min="0.01" required>
+                        <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #6b7280; font-weight: 700;">
+                            ج.م
+                        </span>
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 8px; font-size: 12px;" onclick="fillQuickAmount(0.25)">
+                            ربع المبلغ
+                        </button>
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 8px; font-size: 12px;" onclick="fillQuickAmount(0.5)">
+                            نصف المبلغ
+                        </button>
+                        <button type="button" class="btn-secondary" style="flex: 1; padding: 8px; font-size: 12px;" onclick="fillQuickAmount(1)">
+                            كامل المبلغ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Payment Date -->
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label">
+                        <i class="bi bi-calendar-date"></i>
+                        تاريخ الدفع
+                    </label>
+                    <input type="date" id="payDate" class="form-control"
+                           value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group" style="margin-bottom: 24px;">
+                    <label class="form-label">
+                        <i class="bi bi-pencil-square"></i>
+                        ملاحظات (اختياري)
+                    </label>
+                    <textarea id="payNotes" class="form-control" rows="3"
+                              placeholder="أضف ملاحظات حول هذا الدفع..."
+                              style="resize: vertical;"></textarea>
+                </div>
+
+                <!-- Actions -->
+                <div class="form-actions">
+                    <button type="button" onclick="closePayModal()" class="btn-secondary">
+                        <i class="bi bi-x-circle"></i>
+                        إلغاء
+                    </button>
+                    <button type="submit" class="btn-primary" id="submitPaymentBtn">
+                        <i class="bi bi-check-circle"></i>
+                        تأكيد الدفع
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Installments/index.js"></script>
+}
