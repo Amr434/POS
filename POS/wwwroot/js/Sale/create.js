@@ -1,5 +1,5 @@
 ﻿let cart = [];
-let paymentType = 0; // 0 = Cash, 1 = Installment
+let paymentType = 1; // 1 = Cash, 2 = Installment
 let searchedProducts = []; // List of products that have been searched and added
 let searchTimeout;
 let currentInterestAmount = 0; // ✅ متغير لحفظ قيمة الفائدة الحالية
@@ -93,7 +93,7 @@ function addToCart(product) {
 
     if (existing) {
         existing.quantity++;
-        showAlert(`تم زيادة كمية ${product.name}`, 'success');
+        // showAlert(`تم زيادة كمية ${product.name}`, 'success'); // ❌ احذف هذا السطر
     } else {
         // Add to cart
         cart.push({
@@ -118,11 +118,20 @@ function addToCart(product) {
             });
         }
 
-        showAlert(`تم إضافة ${product.name} إلى العربة`, 'success');
+       // showAlert(`تم إضافة ${product.name} إلى العربة`, 'success');
     }
 
     renderCart();
     renderSearchedProducts();
+
+    // ✅ تحديث المبلغ المدفوع تلقائياً في حالة النقدي
+    if (paymentType === 1) {
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const paidAmountInput = document.getElementById('paidAmount');
+        if (paidAmountInput && !paidAmountInput.disabled) {
+            paidAmountInput.value = subtotal.toFixed(2);
+        }
+    }
     calculateTotals();
     searchInput.value = '';
     searchResults.classList.remove('show');
@@ -143,21 +152,40 @@ function removeFromCart(index) {
 
     renderCart();
     renderSearchedProducts();
+    // ✅ تحديث المبلغ المدفوع تلقائياً في حالة النقدي
+    if (paymentType === 1) {
+        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const paidAmountInput = document.getElementById('paidAmount');
+        if (paidAmountInput && !paidAmountInput.disabled) {
+            paidAmountInput.value = subtotal.toFixed(2);
+        }
+    }
+
     calculateTotals();
-    showAlert(`تم إزالة ${item.name} من العربة`, 'info');
 }
 
 // Update Quantity
 function updateQuantity(index, quantity) {
     const qty = parseInt(quantity);
     if (qty > 0) {
+        // 1️⃣ تحديث الكمية
         cart[index].quantity = qty;
+
+        // 2️⃣ تحديث المبلغ المدفوع (للنقدي فقط)
+        if (paymentType === 1) {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const paidAmountInput = document.getElementById('paidAmount');
+            if (paidAmountInput && !paidAmountInput.disabled) {
+                paidAmountInput.value = subtotal.toFixed(2);
+            }
+        }
+
+        // 3️⃣ إعادة حساب كل شيء (subtotal, total, remaining)
         calculateTotals();
     } else {
         removeFromCart(index);
     }
 }
-
 // Render Searched Products List
 function renderSearchedProducts() {
     const container = document.getElementById('searchedProductsList');
@@ -183,7 +211,7 @@ function renderSearchedProducts() {
                         </div>
                     </div>
                 `;
-    }).join('')}}
+    }).join('')}
         </div>
     `;
 }
@@ -266,7 +294,7 @@ function calculateTotals() {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
     // ✅ إضافة الفائدة للمبلغ الكلي في حالة التقسيط
-    const total = paymentType === 1 ? subtotal + currentInterestAmount : subtotal;
+    const total = paymentType === 2 ? subtotal + currentInterestAmount : subtotal;
     
     const paidAmount = parseFloat(document.getElementById('paidAmount').value) || 0;
     const remaining = total - paidAmount;
@@ -300,7 +328,7 @@ document.querySelectorAll('.payment-method').forEach(method => {
         const paidAmountInput = document.getElementById('paidAmount');
         const installmentSection = document.getElementById('installmentSection');
 
-        if (paymentType === 0) {
+        if (paymentType === 1) {
             // ✅ CASH: Reset interest and auto-fill full amount
             currentInterestAmount = 0; // إعادة تعيين الفائدة
             if (paidAmountInput) {
@@ -334,7 +362,7 @@ document.querySelectorAll('.payment-method').forEach(method => {
 // Update installment calculation to sync paid amount
 document.getElementById('downPayment')?.addEventListener('input', function() {
     // ✅ Sync down payment with paid amount for installments
-    if (paymentType === 1) {
+    if (paymentType === 2) {
         const paidAmountInput = document.getElementById('paidAmount');
         if (paidAmountInput) {
             paidAmountInput.value = this.value;
@@ -351,7 +379,7 @@ const downPaymentInput = document.getElementById('downPayment');
 if (monthsSelect) monthsSelect.addEventListener('change', function() {
     calculateInstallment();
     // ✅ تحديث المتبقي فوراً بعد تغيير عدد الأشهر
-    if (paymentType === 1) {
+    if (paymentType === 2) {
         calculateTotals();
     }
 });
@@ -364,16 +392,17 @@ function calculateInstallment() {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const minDownPayment = subtotal * 0.1;
-    if (downPayment < minDownPayment && downPayment > 0) {
-        showAlert(`الدفعة المقدمة يجب أن تكون ${minDownPayment.toFixed(2)} ج.م على الأقل`, 'error');
-    }
+    // ❌ إزالة التنبيه من هنا - سيتم التحقق فقط عند إتمام البيع
+    // if (downPayment < minDownPayment && downPayment > 0) {
+    //     showAlert(`الدفعة المقدمة يجب أن تكون ${minDownPayment.toFixed(2)} ج.م على الأقل`, 'error');
+    // }
 
     const interestRate = getInterestRate(numberOfMonths);
     const interestAmount = (subtotal * interestRate).toFixed(2);
-    
+
     // ✅ حفظ قيمة الفائدة في المتغير العام
     currentInterestAmount = parseFloat(interestAmount);
-    
+
     const totalWithInterest = (subtotal + currentInterestAmount).toFixed(2);
     const remainingForInstallment = (parseFloat(totalWithInterest) - downPayment).toFixed(2);
     const monthlyPayment = numberOfMonths > 0 ? (remainingForInstallment / numberOfMonths).toFixed(2) : '0.00';
@@ -387,11 +416,10 @@ function calculateInstallment() {
     if (interestAmountEl) interestAmountEl.textContent = `${interestAmount} ج.م`;
     if (totalWithInterestEl) totalWithInterestEl.textContent = `${totalWithInterest} ج.م`;
     if (monthlyPaymentEl) monthlyPaymentEl.textContent = `${monthlyPayment} ج.م`;
-    
+
     // ✅ تحديث المبلغ الكلي والمتبقي بعد حساب الفائدة
     calculateTotals();
 }
-
 function getInterestRate(months) {
     switch (months) {
         case 3: return 0.015;
@@ -419,13 +447,13 @@ document.getElementById('completeSaleBtn')?.addEventListener('click', async func
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
     // ✅ المبلغ الكلي يشمل الفائدة في حالة التقسيط
-    const totalAmount = paymentType === 1 ? subtotal + currentInterestAmount : subtotal;
+    const totalAmount = paymentType === 2 ? subtotal + currentInterestAmount : subtotal;
     
     let paidAmount = 0;
     let numberOfMonths = null;
     let downPayment = null;
 
-    if (paymentType === 0) {
+    if (paymentType === 1) {
         // Cash payment
         paidAmount = parseFloat(document.getElementById('paidAmount').value) || 0;
     } else {
@@ -440,9 +468,16 @@ document.getElementById('completeSaleBtn')?.addEventListener('click', async func
             return;
         }
     }
+    const interestRate = getInterestRate(numberOfMonths);
 
     const remainingAmount = totalAmount - paidAmount;
+    var installment = {
+        numberOfMonths: numberOfMonths,
+        InterestRate: interestRate,
+        DownPayment: downPayment,   
 
+
+    };
     const data = {
         customerId: parseInt(customerId),
         saleDate: saleDate,
@@ -452,6 +487,7 @@ document.getElementById('completeSaleBtn')?.addEventListener('click', async func
         paymentType: paymentType,
         numberOfMonths: numberOfMonths,
         downPayment: downPayment,
+        Installment: paymentType=="2"? installment:null,
         items: cart.map(item => ({
             productId: item.id,
             quantity: item.quantity,
@@ -493,137 +529,6 @@ document.getElementById('completeSaleBtn')?.addEventListener('click', async func
     }
 });
 
-// Alert System
-function showAlert(message, type = 'error') {
-    let alertContainer = document.getElementById('alertContainer');
-
-    if (!alertContainer) {
-        alertContainer = document.createElement('div');
-        alertContainer.id = 'alertContainer';
-        alertContainer.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 400px;';
-        document.body.appendChild(alertContainer);
-    }
-
-    const alert = document.createElement('div');
-    alert.style.cssText = `
-        padding: 12px 20px;
-        border-radius: 8px;
-        margin-bottom: 10px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        animation: slideIn 0.3s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `;
-
-    const colors = {
-        success: { bg: '#d1fae5', color: '#065f46', border: '#6ee7b7' },
-        error: { bg: '#fee2e2', color: '#991b1b', border: '#fca5a5' },
-        info: { bg: '#dbeafe', color: '#1e40af', border: '#93c5fd' }
-    };
-
-    const style = colors[type] || colors.error;
-    alert.style.backgroundColor = style.bg;
-    alert.style.color = style.color;
-    alert.style.border = `1px solid ${style.border}`;
-
-    const icon = type === 'success' ? 'check-circle-fill' :
-        type === 'info' ? 'info-circle-fill' :
-            'exclamation-triangle-fill';
-
-    alert.innerHTML = `
-        <i class="bi bi-${icon}"></i>
-        <span>${message}</span>
-    `;
-
-    alertContainer.appendChild(alert);
-
-    setTimeout(() => {
-        alert.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => alert.remove(), 300);
-    }, 3000);
-}
-
-// Add CSS animations
-if (!document.querySelector('#alertAnimations')) {
-    const style = document.createElement('style');
-    style.id = 'alertAnimations';
-    style.textContent = `
-        @keyframes slideIn {
-            from { transform: translateX(400px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOut {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(400px); opacity: 0; }
-        }
-        .in-cart-badge, .searched-badge {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 600;
-        }
-        .in-cart-badge {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        .searched-badge {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-        .product-item.disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .searched-products-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 12px;
-            padding: 10px;
-        }
-        .searched-product-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .searched-product-card:not(.in-cart):hover {
-            border-color: #1e3a8a;
-            box-shadow: 0 2px 8px rgba(30, 58, 138, 0.1);
-        }
-        .searched-product-card.in-cart {
-            opacity: 0.6;
-            cursor: default;
-        }
-        .searched-product-card img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 6px;
-            margin-bottom: 8px;
-        }
-        .searched-product-name {
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        .searched-product-price {
-            color: #1e3a8a;
-            font-weight: 700;
-            margin-bottom: 4px;
-        }
-        .in-cart-indicator {
-            color: #059669;
-            font-size: 11px;
-        }
-        .add-indicator {
-            color: #6b7280;
-            font-size: 11px;
-        }
-    `;
-    document.head.appendChild(style);
-}
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function () {
@@ -634,4 +539,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     searchInput?.focus();
     renderSearchedProducts();
+    
+    // ✅ إخفاء قسم التقسيط عند تحميل الصفحة (Cash هو الافتراضي)
+    const installmentSection = document.getElementById('installmentSection');
+    if (installmentSection) {
+        installmentSection.style.display = 'none';
+    }
+    
+    // ✅ تفعيل حقل المبلغ المدفوع
+    const paidAmountInput = document.getElementById('paidAmount');
+    if (paidAmountInput) {
+        paidAmountInput.disabled = false;
+    }
 });

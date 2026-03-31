@@ -18,7 +18,7 @@ public class CreateSaleDto
 
     public decimal RemainingAmount { get; set; }
 
-    public PaymentMethod PaymentMethod { get; set; }
+    public PaymentMethod paymentType { get; set; }
     
     // ✅ إضافة بيانات التقسيط
     public InstallmentDto? Installment { get; set; }

@@ -82,23 +82,30 @@ public class SalesController : Controller
             return BadRequest(new { error = "البيانات غير صحيحة" });
         }
 
-        // التحقق من وجود منتجات
         if (dto.Items == null || dto.Items.Count == 0)
         {
             return BadRequest(new { error = "الرجاء إضافة منتجات للفاتورة" });
         }
 
-        // التحقق من التقسيط
-        if (dto.PaymentMethod == PaymentMethod.Installment)
+            // ✅ التحقق من المخزون باستخدام InventoryBatch
+        foreach (var itemDto in dto.Items)
+        {
+            var totalAvailable = await _context.InventoryBatches
+                .Where(b => b.ProductId == itemDto.ProductId)
+                .SumAsync(b => b.RemainingQuantity);
+
+            if (totalAvailable < itemDto.Quantity)
+            {
+                var product = await _context.Products.FindAsync(itemDto.ProductId);
+                return BadRequest(new { error = $"الكمية المتاحة من {product?.Name ?? "المنتج"} هي {totalAvailable} فقط" });
+            }
+        }
+
+        if (dto.paymentType == PaymentMethod.Installment)
         {
             if (dto.Installment == null || dto.Installment.NumberOfMonths <= 0)
             {
                 return BadRequest(new { error = "الرجاء إدخال تفاصيل التقسيط" });
-            }
-
-            if (dto.Installment.DownPayment < dto.TotalAmount * 0.10m)
-            {
-                return BadRequest(new { error = "الدفعة المقدمة يجب ألا تقل عن 10% من الإجمالي" });
             }
         }
 
@@ -113,13 +120,13 @@ public class SalesController : Controller
                 TotalAmount = dto.TotalAmount,
                 PaidAmount = dto.PaidAmount,
                 RemainingAmount = dto.RemainingAmount,
-                PaymentMethod = dto.PaymentMethod,
+                PaymentMethod = dto.paymentType,
             };
 
             _context.Sales.Add(sale);
             await _context.SaveChangesAsync();
 
-            // Add sale items and update product status
+            // ✅ Add sale items and deduct from inventory batches (FIFO)
             foreach (var itemDto in dto.Items)
             {
                 var saleItem = new SaleItem
@@ -133,26 +140,23 @@ public class SalesController : Controller
 
                 _context.SaleItems.Add(saleItem);
 
-                // Update product status to Sold
-                var product = await _context.Products.FindAsync(itemDto.ProductId);
-                if (product != null)
-                {
-                    product.Status = ProductStatus.Sold;
-                }
+                // ✅ خصم من InventoryBatches باستخدام FIFO
+                await DeductFromInventoryBatches(itemDto.ProductId, itemDto.Quantity);
+
+                // ✅ تحديث Product Status إذا نفذ المخزون
+                await UpdateProductStatus(itemDto.ProductId);
             }
 
             await _context.SaveChangesAsync();
 
-            // ✅ إنشاء خطة التقسيط إذا كانت طريقة الدفع تقسيط
-            if (dto.PaymentMethod == PaymentMethod.Installment && dto.Installment != null)
+            // إنشاء خطة التقسيط (نفس الكود القديم)
+            if (dto.paymentType == PaymentMethod.Installment && dto.Installment != null)
             {
-                // حساب الفائدة
                 var principalAmount = dto.TotalAmount - dto.Installment.DownPayment;
                 var interestAmount = principalAmount * (dto.Installment.InterestRate / 100) * dto.Installment.NumberOfMonths;
                 var totalWithInterest = principalAmount + interestAmount;
                 var monthlyPayment = totalWithInterest / dto.Installment.NumberOfMonths;
 
-                // إنشاء خطة التقسيط
                 var installmentPlan = new InstallmentPlan
                 {
                     SaleId = sale.Id,
@@ -169,7 +173,6 @@ public class SalesController : Controller
                 _context.InstallmentPlans.Add(installmentPlan);
                 await _context.SaveChangesAsync();
 
-                // ✅ إنشاء الأقساط الشهرية
                 var payments = new List<InstallmentPayment>();
                 for (int i = 1; i <= dto.Installment.NumberOfMonths; i++)
                 {
@@ -199,18 +202,42 @@ public class SalesController : Controller
         }
     }
 
-    // ✅ إضافة method لحساب نسبة الفائدة حسب عدد الأشهر
-    private decimal GetInterestRate(int months)
+    // ✅ دالة خصم من المخزون (FIFO)
+    private async Task DeductFromInventoryBatches(int productId, int quantity)
     {
-        return months switch
+        var remainingToDeduct = quantity;
+
+        // ✅ FIFO: خصم من أقدم دفعة أولاً
+        var batches = await _context.InventoryBatches
+            .Where(b => b.ProductId == productId && b.RemainingQuantity > 0)
+            .OrderBy(b => b.PurchaseDate) // أقدم دفعة أولاً
+            .ToListAsync();
+
+        foreach (var batch in batches)
         {
-            3 => 1.5m,   // 1.5% شهرياً
-            6 => 2.0m,   // 2% شهرياً
-            12 => 2.5m,  // 2.5% شهرياً
-            24 => 3.0m,  // 3% شهرياً
-            _ => 2.0m    // افتراضي
-        };
-    }   
+            if (remainingToDeduct <= 0) break;
+
+            var deductFromBatch = Math.Min(batch.RemainingQuantity, remainingToDeduct);
+            batch.RemainingQuantity -= deductFromBatch;
+            remainingToDeduct -= deductFromBatch;
+        }
+    }
+
+    // ✅ تحديث حالة المنتج
+    private async Task UpdateProductStatus(int productId)
+    {
+        var totalRemaining = await _context.InventoryBatches
+            .Where(b => b.ProductId == productId)
+            .SumAsync(b => b.RemainingQuantity);
+
+        var product = await _context.Products.FindAsync(productId);
+        if (product != null)
+        {
+            // ✅ تغيير Status فقط إذا نفذ المخزون
+            product.Status = totalRemaining > 0 ? ProductStatus.New : ProductStatus.Sold;
+        }
+    }
+
     // GET: Sales/Details/5
     [HttpGet]
     public async Task<IActionResult> GetDetails(int id)
@@ -263,14 +290,11 @@ public class SalesController : Controller
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Update products back to New status
+            // ✅ إرجاع الكميات إلى المخزون
             foreach (var item in sale.SaleItems)
             {
-                var product = await _context.Products.FindAsync(item.ProductId);
-                if (product != null && product.Status == ProductStatus.Sold)
-                {
-                    product.Status = ProductStatus.New;
-                }
+                await ReturnToInventoryBatches(item.ProductId, item.Quantity);
+                await UpdateProductStatus(item.ProductId);
             }
 
             _context.Sales.Remove(sale);
@@ -286,13 +310,43 @@ public class SalesController : Controller
         }
     }
 
-    // GET: Sales/GetAvailableProducts - For AJAX
+    // ✅ دالة إرجاع للمخزون (LIFO)
+    private async Task ReturnToInventoryBatches(int productId, int quantity)
+    {
+        var remainingToReturn = quantity;
+
+        // ✅ LIFO للإرجاع: إرجاع لأحدث دفعة
+        var batches = await _context.InventoryBatches
+            .Where(b => b.ProductId == productId && b.RemainingQuantity < b.Quantity)
+            .OrderByDescending(b => b.PurchaseDate) // أحدث دفعة أولاً
+            .ToListAsync();
+
+        foreach (var batch in batches)
+        {
+            if (remainingToReturn <= 0) break;
+
+            var maxCanReturn = batch.Quantity - batch.RemainingQuantity;
+            var returnToBatch = Math.Min(maxCanReturn, remainingToReturn);
+            
+            batch.RemainingQuantity += returnToBatch;
+            remainingToReturn -= returnToBatch;
+        }
+    }
+
+    // GET: Sales/GetAvailableProducts
     [HttpGet]
     public async Task<IActionResult> GetAvailableProducts(string search = "")
     {
+        // ✅ المنتجات التي لديها مخزون متاح
+        var productsWithStock = await _context.InventoryBatches
+            .Where(b => b.RemainingQuantity > 0)
+            .Select(b => b.ProductId)
+            .Distinct()
+            .ToListAsync();
+
         var query = _context.Products
             .Include(p => p.Category)
-            .Where(p => p.Status == ProductStatus.New);
+            .Where(p => productsWithStock.Contains(p.Id));
 
         if (!string.IsNullOrEmpty(search))
         {
@@ -309,14 +363,18 @@ public class SalesController : Controller
                 barcode = p.Barcode,
                 category = p.Category.Name,
                 price = p.SalePrice,
-                imagePath = p.ImagePath
+                imagePath = p.ImagePath,
+                // ✅ إضافة الكمية المتاحة
+                availableQuantity = _context.InventoryBatches
+                    .Where(b => b.ProductId == p.Id)
+                    .Sum(b => b.RemainingQuantity)
             })
             .ToListAsync();
 
         return Ok(products);
     }
 
-    // GET: Sales/GetStats
+    // ✅ GET: Sales/GetStats
     [HttpGet]
     public async Task<IActionResult> GetStats()
     {
@@ -342,7 +400,7 @@ public class SalesController : Controller
         });
     }
 
-    // GET: Sales/GetRecent
+    // ✅ GET: Sales/GetRecent
     [HttpGet]
     public async Task<IActionResult> GetRecent(int count = 5)
     {
@@ -363,6 +421,7 @@ public class SalesController : Controller
         return Json(sales);
     }
 
+    // ✅ Private helper methods
     private async Task<List<SelectListItem>> GetCustomersSelectList()
     {
         return await _context.Customers
@@ -377,9 +436,15 @@ public class SalesController : Controller
 
     private async Task<List<ProductForSaleDto>> GetProductsForSale()
     {
+        var productsWithStock = await _context.InventoryBatches
+            .Where(b => b.RemainingQuantity > 0)
+            .Select(b => b.ProductId)
+            .Distinct()
+            .ToListAsync();
+
         return await _context.Products
             .Include(p => p.Category)
-            .Where(p => p.Status == ProductStatus.New)
+            .Where(p => productsWithStock.Contains(p.Id))
             .OrderBy(p => p.Name)
             .Select(p => new ProductForSaleDto
             {

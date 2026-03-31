@@ -339,7 +339,7 @@
                             <td style="color: #059669; font-weight: 700;">@sale.PaidAmount.ToString("N2") ج.م</td>
                             <td style="color: #dc2626; font-weight: 700;">@sale.RemainingAmount.ToString("N2") ج.م</td>
                             <td>
-                                <span class="badge @(sale.PaymentMethod == 0 ? "badge-cash" : "badge-installment")">
+                                <span class="badge @(sale.PaymentMethod == PaymentMethod.Cash? "badge-cash" : "badge-installment")">
                                     @(sale.PaymentMethod == PaymentMethod.Cash ? "كاش" : "تقسيط")
                                 </span>
                             </td>
@@ -395,7 +395,7 @@
     </div>
 </div>
 
-<!-- Details Modal -->
+<!-- Details Modal - ✅ HTML ثابت -->
 <div class="modal fade" id="detailsModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
@@ -404,8 +404,77 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="detailsContent">
-                <div class="text-center py-4">
+                <!-- ✅ Loading State -->
+                <div id="loadingState" class="text-center py-4">
                     <div class="spinner-border text-success" role="status"></div>
+                    <p class="mt-2 text-muted">جاري التحميل...</p>
+                </div>
+
+                <!-- ✅ Error State -->
+                <div id="errorState" class="alert alert-danger" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <span id="errorMessage"></span>
+                </div>
+
+                <!-- ✅ Content - Static HTML -->
+                <div id="contentState" style="display: none; padding: 20px;">
+                    <!-- Invoice Header -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                        <div>
+                            <strong style="color: #6b7280;">رقم الفاتورة:</strong>
+                            <div style="font-size: 18px; font-weight: 700;" id="invoiceId">#-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #6b7280;">التاريخ:</strong>
+                            <div style="font-size: 18px; font-weight: 700;" id="invoiceDate">-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #6b7280;">العميل:</strong>
+                            <div style="font-size: 16px; font-weight: 700;" id="customerName">-</div>
+                            <div style="color: #6b7280; font-size: 14px;" id="customerPhone">-</div>
+                        </div>
+                        <div>
+                            <strong style="color: #6b7280;">طريقة الدفع:</strong>
+                            <div>
+                                <span class="badge" id="paymentMethodBadge">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Products Section -->
+                    <h6 style="font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">
+                        <i class="bi bi-list-ul"></i> المنتجات
+                    </h6>
+
+                    <table style="width: 100%; margin-bottom: 24px;">
+                        <thead>
+                            <tr style="background: #f9fafb;">
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">المنتج</th>
+                                <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e5e7eb;">الكمية</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">السعر</th>
+                                <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">الإجمالي</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsList">
+                            <!-- Products will be inserted here -->
+                        </tbody>
+                    </table>
+
+                    <!-- Summary -->
+                    <div style="background: #f9fafb; padding: 20px; border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                            <span style="font-weight: 700;">الإجمالي:</span>
+                            <span style="font-size: 18px; font-weight: 700;" id="totalAmount">0.00 ج.م</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #059669;">
+                            <span style="font-weight: 700;">المدفوع:</span>
+                            <span style="font-size: 18px; font-weight: 700;" id="paidAmount">0.00 ج.م</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid #e5e7eb; color: #dc2626;">
+                            <span style="font-weight: 700;">المتبقي:</span>
+                            <span style="font-size: 20px; font-weight: 800;" id="remainingAmount">0.00 ج.م</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -413,117 +482,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        async function viewSale(id) {
-            const modal = new bootstrap.Modal(document.getElementById('detailsModal'));
-            modal.show();
-
-            try {
-                const response = await fetch(`/Sales/GetDetails/${id}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'حدث خطأ');
-                }
-
-                const html = `
-                    <div style="padding: 20px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-                            <div>
-                                <strong style="color: #6b7280;">رقم الفاتورة:</strong>
-                                <div style="font-size: 18px; font-weight: 700;">#${data.id}</div>
-                            </div>
-                            <div>
-                                <strong style="color: #6b7280;">التاريخ:</strong>
-                                <div style="font-size: 18px; font-weight: 700;">${new Date(data.saleDate).toLocaleDateString('ar-EG')}</div>
-                            </div>
-                            <div>
-                                <strong style="color: #6b7280;">العميل:</strong>
-                                <div style="font-size: 16px; font-weight: 700;">${data.customerName}</div>
-                                <div style="color: #6b7280; font-size: 14px;">${data.customerPhone}</div>
-                            </div>
-                            <div>
-                                <strong style="color: #6b7280;">طريقة الدفع:</strong>
-                                <div>
-                                    <span class="badge ${data.paymentType === 0 ? 'badge-cash' : 'badge-installment'}">
-                                        ${data.paymentType === 0 ? 'كاش' : 'تقسيط'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <h6 style="font-weight: 700; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #e5e7eb;">
-                            <i class="bi bi-list-ul"></i> المنتجات
-                        </h6>
-
-                        <table style="width: 100%; margin-bottom: 24px;">
-                            <thead>
-                                <tr style="background: #f9fafb;">
-                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">المنتج</th>
-                                    <th style="padding: 10px; text-align: center; border-bottom: 2px solid #e5e7eb;">الكمية</th>
-                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">السعر</th>
-                                    <th style="padding: 10px; text-align: right; border-bottom: 2px solid #e5e7eb;">الإجمالي</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.items.map(item => `
-                                    <tr>
-                                        <td style="padding: 10px; border-bottom: 1px solid #f3f4f6;">${item.productName}</td>
-                                        <td style="padding: 10px; text-align: center; border-bottom: 1px solid #f3f4f6;">${item.quantity}</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #f3f4f6;">${item.unitPrice.toFixed(2)} ج.م</td>
-                                        <td style="padding: 10px; font-weight: 700; border-bottom: 1px solid #f3f4f6;">${item.total.toFixed(2)} ج.م</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-
-                        <div style="background: #f9fafb; padding: 20px; border-radius: 12px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                                <span style="font-weight: 700;">الإجمالي:</span>
-                                <span style="font-size: 18px; font-weight: 700;">${data.totalAmount.toFixed(2)} ج.م</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; color: #059669;">
-                                <span style="font-weight: 700;">المدفوع:</span>
-                                <span style="font-size: 18px; font-weight: 700;">${data.paidAmount.toFixed(2)} ج.م</span>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; padding-top: 12px; border-top: 2px solid #e5e7eb; color: #dc2626;">
-                                <span style="font-weight: 700;">المتبقي:</span>
-                                <span style="font-size: 20px; font-weight: 800;">${data.remainingAmount.toFixed(2)} ج.م</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('detailsContent').innerHTML = html;
-
-            } catch (error) {
-                document.getElementById('detailsContent').innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        ${error.message}
-                    </div>
-                `;
-            }
-        }
-
-        async function deleteSale(id, customerName) {
-            if (!confirm(`هل أنت متأكد من حذف فاتورة "${customerName}"؟\nسيتم إرجاع المنتجات إلى حالة "جديد".`)) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/Sales/Delete/${id}`, { method: 'POST' });
-                const result = await response.json();
-
-                if (response.ok) {
-                    alert(result.message);
-                    location.reload();
-                } else {
-                    alert(result.error);
-                }
-            } catch (error) {
-                alert('حدث خطأ أثناء الحذف');
-            }
-        }
-    </script>
+ <script src="~/js/Sale/index.js"></script>
 }

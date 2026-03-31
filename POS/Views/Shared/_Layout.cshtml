@@ -15,6 +15,7 @@
     <!-- ✅ Site CSS -->
     <link href="~/css/site.css" asp-append-version="true" rel="stylesheet" />
     <link href="~/POS.styles.css" asp-append-version="true" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/alerts.css" />
     <!-- Bootstrap Icons -->
     <!-- Google Fonts - Arabic -->
 </head>
@@ -66,7 +67,7 @@
 
             <!-- المبيعات -->
             <div class="nav-item has-submenu">
-                <a href="#" class="nav-link" data-title="المبيعات" data-page="المبيعات">
+                <a href="#" class="nav-link" data-title="المبيعات" data-page="الم_sales">
                     <i class="bi bi-cart3"></i>
                     <span>المبيعات</span>
                 </a>
@@ -89,7 +90,7 @@
 
             <!-- المبيعات -->
             <div class="nav-item has-submenu">
-                <a href="#" class="nav-link" data-title="المبيعات" data-page="المبيعات">
+                <a href="#" class="nav-link" data-title="المبيعات" data-page="المشتريات">
                     <i class="bi bi-cart3"></i>
                     <span>المشتريات</span>
                 </a>
@@ -217,11 +218,25 @@
             </div>
         </div>
     </div>
-
+    <div id="alertModal" class="alert-modal-overlay">
+        <div class="alert-modal-dialog">
+            <div class="alert-modal-header">
+                <i class="alert-modal-icon"></i>
+                <h3 class="alert-modal-title"></h3>
+            </div>
+            <div class="alert-modal-body">
+                <p class="alert-modal-message"></p>
+            </div>
+            <div class="alert-modal-footer">
+                <button type="button" class="alert-modal-btn"></button>
+            </div>
+        </div>
+    </div>
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/shared/alerts.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
